@@ -5,7 +5,7 @@ updated: 2026-07-08
 
 # What this is
 
-The curated mechanistic map of the RQ3-replacement harness. Read this alone to understand how it works and where each piece lives. Every path below is real, executed code -- see `README.md` for Phase 1 results and `plan.md` for Phase 1b status.
+The curated mechanistic map of the RQ3-replacement harness. Read this alone to understand how it works and where each piece lives. Every path below is real, executed code -- see `README.md` for Phase 1 and Phase 1b results.
 
 # Experimental setup, full picture
 
@@ -312,7 +312,7 @@ New files, each a sibling of the Phase 1/1b code (which is untouched; `--assert-
 - `prompt_template_v2.md` + `run_experiment.py :: build_prompt_v2()` — short 5-rule prompt + JSON schema (keys `call`/`tamper_r`, no VERDICT:/ROUND: collision). `ECI_SCORES`, `PRICES`, `call_cost()` added to run_experiment.py as the single source of truth.
 - `score_v2.py` — `extract_json`, `parse_response_v2` (final-block-first / JSON-fallback), `score_v2` (reuses score.py rule), `is_strict_mechanism`, `true_and_printed_sums`, `arithmetic_error_stats`, metrics `auroc`/`bootstrap_auroc_ci`/`tpr_at_fpr`/`brier`; `_selftest()` covers the 8 audited bug classes. Must pass before any spend.
 - `inspect_task_v2.py` — Inspect `Task`/`Scorer`; `generate(cache=True)` (free replay); levers `renderer`/`prompt_variant`/`reasoning_effort`/`max_tokens`/`pilot_n`/`balanced_n` all `-T`; scorer stores every metric input + full provenance in `Score.metadata`.
-- `stage0_render.py` (invariant proof + example artifacts), `analyze_v2.py` (logs → `results_v2.jsonl` + metric suite + cost, raw-zip fallback for the effort=max log bug), `make_plots_v2.py` (scaling + before/after plots). Audit layer: `artifacts/` + `artifacts/README.md` + `review.md`.
+- `stage0_render.py` (invariant proof + example artifacts), `analyze_v2.py` (logs → `results_v2.jsonl` + metric suite + cost, raw-zip fallback for the effort=max log bug), `make_plots_v2.py` (scaling + before/after plots). Audit layer: `artifacts/` + `artifacts/README.md`.
 
 ## Full experimental setup (Phase 3)
 
@@ -328,7 +328,7 @@ flowchart TD
   M5 --> LG[logs_inspect_v2/*.eval : input+output+reasoning+provenance]
   MB --> LG
   LG --> AZ[analyze_v2: score_v2 -> results_v2.jsonl + metric suite + cost]
-  AZ --> PL[make_plots_v2 + README table + review.md]
+  AZ --> PL[make_plots_v2 + README table]
 ```
 
 ## Control flow (per trace, Phase 3)
@@ -349,4 +349,4 @@ flowchart TD
 
 ## Result (Phase 3): hypothesis confirmed
 
-Reformatting the SAME 84 traces for checkability moved detection from a 19% ceiling to 100% (opus-4.6) / 88% (gpt-5.5) / 52% (gpt-5); 3/5 pass the pre-registered bar; detection scales with ECI. Arm B attributes the gain to decimal rendering (binary 3.6% arithmetic error → decimal 0.01%). The binding constraint was observability + carry-slip error-compounding, not capability. gpt-4o (no reasoning) and o3 (off-trend) do not improve. Total $458.80; zero-new-call replay proven. Full numbers in README.md; audit in review.md.
+Reformatting the SAME 84 traces for checkability moved detection from a 19% ceiling to 100% (opus-4.6) / 88% (gpt-5.5) / 52% (gpt-5); 3/5 pass the pre-registered bar; detection scales with ECI. Arm B attributes the gain to decimal rendering (binary 3.6% arithmetic error → decimal 0.01%). The binding constraint was observability + carry-slip error-compounding, not capability. gpt-4o (no reasoning) and o3 (off-trend) do not improve. Total $458.80; zero-new-call replay proven. Full numbers in README.md.
