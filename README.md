@@ -10,9 +10,11 @@ confidence: high (N=84 x 5 models main run + n=28 control-run attribution contro
 
 This repo is the standalone reproducibility package for the experiment behind the LessWrong post "Making credible deals with AIs" by Ram Potham (link added when the post is live).
 
-A clean, minimal, fully reproducible replacement for the earlier informal writeup's numbers on this question (the only quantitative support in the post for "AIs can verify TEE attestations via chain-of-thought"). Built because Ram doesn't trust that writeup's rigor or reproducibility enough to put his name behind its numbers in public. Everything here is either pure local computation (already verified against `hashlib`) or a harness that has not yet made a single API call.
+A clean, minimal, fully reproducible replacement for the earlier informal writeup's numbers on this question (the only quantitative support in the post for "AIs can verify TEE attestations via chain-of-thought"). Built because Ram doesn't trust that writeup's rigor or reproducibility enough to put his name behind its numbers in public. Everything here is either pure local computation (already verified against `hashlib`) or a harness that has not yet made a single API call [true at the time of writing; the completed runs and their costs are reported above].
 
-## Why run this experiment?
+## The pre-run decision record (kept as written)
+
+This section is the decision analysis written BEFORE any API call was made, preserved because pre-registered reasoning is part of the evidence; the results above show how it played out.
 
 **Theory of change:** clean replication -> a number Ram personally verified and can defend -> post cites owned evidence instead of an untrusted number or a vague hedge -> post is more credible on its single most quantitatively-loaded claim.
 
