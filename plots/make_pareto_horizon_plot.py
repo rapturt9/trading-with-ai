@@ -55,7 +55,7 @@ for h, tp, name, est, se in points:
 
 fx = [h for h, tp, name in frontier]
 fy = [tp for h, tp, name in frontier]
-ax.plot(fx, fy, "--", color="#1f77b4", linewidth=2, zorder=2, label="Pareto frontier (best TP_r4r achieved up to each horizon)")
+ax.plot(fx, fy, "--", color="#1f77b4", linewidth=2, zorder=2, label="frontier (best detection achieved up to each horizon)")
 
 dominated = [(h, tp) for h, tp, name, est, se in points if name not in frontier_names]
 for h, tp in dominated:
@@ -67,10 +67,10 @@ ax.set_xticks(ticks)
 ax.get_xaxis().set_major_formatter(FuncFormatter(lambda v, _: f"{int(v)}"))
 ax.set_xticklabels([f"{int(v)}" for v in ticks], rotation=40, ha="right")
 ax.set_xlabel("METR 50%-time-horizon, minutes (log scale; triangles = ECI-estimated)")
-ax.set_ylabel("Tamper detection (%, ↑ higher is better)")
+ax.set_ylabel("Tamper caught, exact round named (%, higher is better)")
 ax.set_ylim(-2, 25)
 ax.legend(loc="upper left", fontsize=9)
-ax.set_title("Pareto frontier: detection rises with time horizon along the frontier,\nbut gpt-5 and gpt-5.5 are dominated (worse detection at a higher horizon)")
+ax.set_title("Raw trace: detection vs task-length horizon,\nrising along the frontier but not monotonic in capability")
 ax.grid(alpha=0.3)
 
 fig.subplots_adjust(bottom=0.30)
