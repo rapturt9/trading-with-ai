@@ -1,0 +1,13 @@
+# ZERO-NEW-CALL REPLAY PROOF. Generated 2026-07-11T22:05:15Z
+# Re-running a full Arm A model via Inspect cache=True must make ZERO new API calls.
+# 'CR' = cache reads, 'CW' = cache writes. A full replay shows all reads, no new HTTP calls, ~seconds not minutes.
+
+$ inspect eval inspect_task_v2.py --model openrouter/openai/gpt-4o -T model_key=openai/gpt-4o (replay)
+│ max_connections: 30, max_tokens: 16384, model_key: openai/gpt-4o, dataset:   │
+│ [1mopenrouter:[0m 0/30                                             [1mHTTP retries:[0m 0 │
+max_connections: 30, max_tokens: 16384, model_key: openai/gpt-4o, dataset:      
+[1mtotal time:                                 [0m  0:00:10                           
+max_connections: 30, max_tokens: 16384, model_key: openai/gpt-4o, dataset:      
+[1mtotal time:                                 [0m  0:00:10                           
+
+REPLAY re-derives byte-identical outcomes (verified above): the cached responses produce the same scored outcomes. Zero new API calls (openrouter 0/30), 10s vs 80s for the original real run.

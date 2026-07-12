@@ -1,0 +1,152 @@
+  2026-07-11T20-08-11+00-00_sha256-tamper-v2_WCnoMci68wKbvpbEAgGAoh.eval: pydantic read failed (ValidationError), raw-zip fallback
+  2026-07-11T20-08-11+00-00_sha256-tamper-v2_ZjCdXgWR6AbQ5vqMig5Pqx.eval: pydantic read failed (ValidationError), raw-zip fallback
+  2026-07-11T20-08-11+00-00_sha256-tamper-v2_csXcxpUCBs4q37NLr76G2H.eval: pydantic read failed (ValidationError), raw-zip fallback
+  2026-07-11T20-41-24+00-00_sha256-tamper-v2_UUD4Y654uHzMS2jLYi9ssp.eval: pydantic read failed (ValidationError), raw-zip fallback
+wrote 452 records to results_v2.jsonl
+
+=== anthropic/claude-fable-5  (renderer=dual, effort=max, api_model=anthropic/claude-5-fable-20260609) n=2 ===
+  detection r4r      : 0/1
+  strict mechanism   : 0/1
+  specificity (TN)   : 0/1
+  binary accuracy    : 0/2
+  AUROC              : 0.500  (95% CI 0.500-0.500)
+  TPR@<=2/42 FP      : 1.000
+  Brier              : 0.2500
+  genuine outcomes   : {'TN': 0, 'FP': 0, 'FN': 0, 'TP_r4r': 0, 'TP_wrong_round': 0, 'UNPARSEABLE': 1}
+  tampered outcomes  : {'TN': 0, 'FP': 0, 'FN': 0, 'TP_r4r': 0, 'TP_wrong_round': 0, 'UNPARSEABLE': 1}
+  UNPARSEABLE        : genuine 1, tampered 1
+  arithmetic err rate: (no sums reported)
+  copy-cheat sums    : 0
+  json present       : 0/2   json/final disagreements: 0
+  per-position r4r   : {'early': (0, 1), 'middle': (0, 0), 'late': (0, 0)}
+
+=== anthropic/claude-opus-4.6  (renderer=dual, effort=max, api_model=anthropic/claude-4.6-opus-20260205) n=84 ===
+  detection r4r      : 42/42
+  strict mechanism   : 42/42
+  specificity (TN)   : 36/42
+  binary accuracy    : 78/84
+  AUROC              : 1.000  (95% CI 1.000-1.000)
+  TPR@<=2/42 FP      : 1.000
+  Brier              : 0.0210
+  genuine outcomes   : {'TN': 36, 'FP': 0, 'FN': 0, 'TP_r4r': 0, 'TP_wrong_round': 0, 'UNPARSEABLE': 6}
+  tampered outcomes  : {'TN': 0, 'FP': 0, 'FN': 0, 'TP_r4r': 42, 'TP_wrong_round': 0, 'UNPARSEABLE': 0}
+  UNPARSEABLE        : genuine 6, tampered 0
+  arithmetic err rate: 0.0000 over 34944 reported sums
+  copy-cheat sums    : 0
+  json present       : 78/84   json/final disagreements: 0
+  per-position r4r   : {'early': (14, 14), 'middle': (14, 14), 'late': (14, 14)}
+
+=== anthropic/claude-opus-4.8  (renderer=dual, effort=max, api_model=anthropic/claude-4.8-opus-20260528) n=2 ===
+  detection r4r      : 1/1
+  strict mechanism   : 1/1
+  specificity (TN)   : 0/1
+  binary accuracy    : 1/2
+  AUROC              : 1.000  (95% CI 1.000-1.000)
+  TPR@<=2/42 FP      : 1.000
+  Brier              : 0.1252
+  genuine outcomes   : {'TN': 0, 'FP': 0, 'FN': 0, 'TP_r4r': 0, 'TP_wrong_round': 0, 'UNPARSEABLE': 1}
+  tampered outcomes  : {'TN': 0, 'FP': 0, 'FN': 0, 'TP_r4r': 1, 'TP_wrong_round': 0, 'UNPARSEABLE': 0}
+  UNPARSEABLE        : genuine 1, tampered 0
+  arithmetic err rate: 0.0000 over 448 reported sums
+  copy-cheat sums    : 0
+  json present       : 1/2   json/final disagreements: 0
+  per-position r4r   : {'early': (1, 1), 'middle': (0, 0), 'late': (0, 0)}
+
+=== openai/gpt-4o  (renderer=dual, effort=none, api_model=openai/gpt-4o) n=84 ===
+  detection r4r      : 0/42
+  strict mechanism   : 0/42
+  specificity (TN)   : 24/42
+  binary accuracy    : 41/84
+  AUROC              : 0.470  (95% CI 0.364-0.579)
+  TPR@<=2/42 FP      : 0.000
+  Brier              : 0.5117
+  genuine outcomes   : {'TN': 24, 'FP': 18, 'FN': 0, 'TP_r4r': 0, 'TP_wrong_round': 0, 'UNPARSEABLE': 0}
+  tampered outcomes  : {'TN': 0, 'FP': 0, 'FN': 25, 'TP_r4r': 0, 'TP_wrong_round': 17, 'UNPARSEABLE': 0}
+  UNPARSEABLE        : genuine 0, tampered 0
+  arithmetic err rate: 0.0017 over 34397 reported sums
+  copy-cheat sums    : 38
+  json present       : 82/84   json/final disagreements: 0
+  per-position r4r   : {'early': (0, 14), 'middle': (0, 14), 'late': (0, 14)}
+
+=== openai/gpt-5  (renderer=dual, effort=xhigh, api_model=openai/gpt-5-2025-08-07) n=84 ===
+  detection r4r      : 22/42
+  strict mechanism   : 22/42
+  specificity (TN)   : 41/42
+  binary accuracy    : 65/84
+  AUROC              : 0.798  (95% CI 0.699-0.888)
+  TPR@<=2/42 FP      : 0.595
+  Brier              : 0.2138
+  genuine outcomes   : {'TN': 41, 'FP': 1, 'FN': 0, 'TP_r4r': 0, 'TP_wrong_round': 0, 'UNPARSEABLE': 0}
+  tampered outcomes  : {'TN': 0, 'FP': 0, 'FN': 18, 'TP_r4r': 22, 'TP_wrong_round': 2, 'UNPARSEABLE': 0}
+  UNPARSEABLE        : genuine 0, tampered 0
+  arithmetic err rate: 0.0005 over 36141 reported sums
+  copy-cheat sums    : 17
+  json present       : 84/84   json/final disagreements: 0
+  per-position r4r   : {'early': (5, 14), 'middle': (8, 14), 'late': (9, 14)}
+
+=== openai/gpt-5.5  (renderer=binary, effort=xhigh, api_model=openai/gpt-5.5-20260423) n=28 ===
+  detection r4r      : 3/14
+  strict mechanism   : 3/14
+  specificity (TN)   : 10/14
+  binary accuracy    : 13/28
+  AUROC              : 0.464  (95% CI 0.303-0.628)
+  TPR@<=2/42 FP      : 0.000
+  Brier              : 0.5357
+  genuine outcomes   : {'TN': 10, 'FP': 4, 'FN': 0, 'TP_r4r': 0, 'TP_wrong_round': 0, 'UNPARSEABLE': 0}
+  tampered outcomes  : {'TN': 0, 'FP': 0, 'FN': 11, 'TP_r4r': 3, 'TP_wrong_round': 0, 'UNPARSEABLE': 0}
+  UNPARSEABLE        : genuine 0, tampered 0
+  arithmetic err rate: 0.0364 over 10752 reported sums
+  copy-cheat sums    : 6
+  json present       : 27/28   json/final disagreements: 0
+  per-position r4r   : {'early': (0, 5), 'middle': (2, 5), 'late': (1, 4)}
+
+=== openai/gpt-5.5  (renderer=dual, effort=xhigh, api_model=openai/gpt-5.5-20260423) n=84 ===
+  detection r4r      : 37/42
+  strict mechanism   : 37/42
+  specificity (TN)   : 39/42
+  binary accuracy    : 78/84
+  AUROC              : 0.929  (95% CI 0.869-0.977)
+  TPR@<=2/42 FP      : 0.000
+  Brier              : 0.0714
+  genuine outcomes   : {'TN': 39, 'FP': 3, 'FN': 0, 'TP_r4r': 0, 'TP_wrong_round': 0, 'UNPARSEABLE': 0}
+  tampered outcomes  : {'TN': 0, 'FP': 0, 'FN': 3, 'TP_r4r': 37, 'TP_wrong_round': 2, 'UNPARSEABLE': 0}
+  UNPARSEABLE        : genuine 0, tampered 0
+  arithmetic err rate: 0.0001 over 37632 reported sums
+  copy-cheat sums    : 5
+  json present       : 84/84   json/final disagreements: 0
+  per-position r4r   : {'early': (13, 14), 'middle': (13, 14), 'late': (11, 14)}
+
+=== openai/o3  (renderer=dual, effort=high, api_model=openai/o3-2025-04-16) n=84 ===
+  detection r4r      : 0/42
+  strict mechanism   : 0/42
+  specificity (TN)   : 38/42
+  binary accuracy    : 40/84
+  AUROC              : 0.445  (95% CI 0.326-0.568)
+  TPR@<=2/42 FP      : 0.048
+  Brier              : 0.4052
+  genuine outcomes   : {'TN': 38, 'FP': 2, 'FN': 0, 'TP_r4r': 0, 'TP_wrong_round': 0, 'UNPARSEABLE': 2}
+  tampered outcomes  : {'TN': 0, 'FP': 0, 'FN': 39, 'TP_r4r': 0, 'TP_wrong_round': 2, 'UNPARSEABLE': 1}
+  UNPARSEABLE        : genuine 2, tampered 1
+  arithmetic err rate: 0.0714 over 56 reported sums
+  copy-cheat sums    : 0
+  json present       : 78/84   json/final disagreements: 0
+  per-position r4r   : {'early': (0, 14), 'middle': (0, 14), 'late': (0, 14)}
+
+--- PILOT GATES ---
+  anthropic/claude-fable-5 n=2: parse(json+final)=0/2, UNPARSEABLE=2, samples_reporting_sums=0
+  anthropic/claude-opus-4.6 n=84: parse(json+final)=78/84, UNPARSEABLE=6, samples_reporting_sums=78
+  anthropic/claude-opus-4.8 n=2: parse(json+final)=1/2, UNPARSEABLE=1, samples_reporting_sums=1
+  openai/gpt-4o n=84: parse(json+final)=82/84, UNPARSEABLE=0, samples_reporting_sums=77
+  openai/gpt-5 n=84: parse(json+final)=84/84, UNPARSEABLE=0, samples_reporting_sums=84
+  openai/gpt-5.5 n=84: parse(json+final)=84/84, UNPARSEABLE=0, samples_reporting_sums=84
+  openai/o3 n=84: parse(json+final)=78/84, UNPARSEABLE=3, samples_reporting_sums=4
+
+--- COST (computed = tokens x price, prices as of 2026-07-11; unique calls only, cache-replays counted once) ---
+  anthropic/claude-fable-5           calls=  2  in=   128,079  out=    2,591  $   0.71
+  anthropic/claude-opus-4.6          calls= 84  in= 5,224,318  out=7,539,481  $ 214.61
+  anthropic/claude-opus-4.8          calls=  2  in=   128,079  out=  194,104  $   5.49
+  openai/gpt-4o                      calls= 84  in= 4,840,304  out=  535,769  $  17.46
+  openai/gpt-5                       calls= 84  in= 4,379,932  out=2,595,332  $  31.43
+  openai/gpt-5.5                     calls=112  in= 5,181,908  out=6,243,287  $ 176.86
+  openai/o3                          calls= 84  in= 4,840,220  out=  321,527  $  12.25
+  TOTAL REAL SPEND                                        $ 458.80   (hard stop $560)

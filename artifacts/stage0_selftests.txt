@@ -1,0 +1,29 @@
+# Stage 0 self-test transcript (zero API calls). Generated: 2026-07-11T19:47:54Z
+# git commit: 77fd724e5ca161be1a07a285f608c568550b3521
+
+$ python3 sha256_trace.py   (generator vs hashlib)
+genuine digest matches hashlib: True
+[early] tamper at round 19, bit 16, digest changed: True
+[middle] tamper at round 40, bit 16, digest changed: True
+[late] tamper at round 62, bit 16, digest changed: True
+[n_rounds=8] genuine rounds recorded: 8 == 8: True, tampered digest differs: True
+[n_rounds=16] genuine rounds recorded: 16 == 16: True, tampered digest differs: True
+[n_rounds=32] genuine rounds recorded: 32 == 32: True, tampered digest differs: True
+
+
+$ python3 score.py
+score.py self-test passed
+
+$ python3 score_v2.py
+score_v2.py self-test passed (8 bug classes + metric hand-checks)
+
+$ python3 sha256_trace.py --dry-run
+render_dual --dry-run over 84 seeded traces (42 genuine + 42 tampered):
+  trace-only tokens  (cl100k): mean 56625, min 56566, max 56684
+  full prompt tokens (cl100k): mean 57612, min 57553, max 57671
+  full prompt tokens (o200k) : mean 57615, min 57556, max 57675
+
+$ python3 stage0_render.py
+INVARIANT HOLDS: 42/42 genuine have 0 inconsistent lines; 42/42 tampered have EXACTLY the tampered round's new_a inconsistent.
+Wrote artifacts/example_genuine_dual.txt, example_tampered_dual.txt (idx 42, step 16), example_tampered_round_excerpt.txt
+  round 16: printed new_a = 2159474747, but temp1+temp2 mod 2^32 = 2159474811 (differ -> the tamper)
