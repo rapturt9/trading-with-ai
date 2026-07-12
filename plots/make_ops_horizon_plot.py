@@ -84,6 +84,24 @@ for name, lo, hi, col in [("full ECDSA verify", 410_000, 800_000, "#E69F00"),
     cross = (math.log10((lo * hi) ** 0.5) - inter) / slope
     print(f"{name}: trend crosses ~{mdates.num2date(cross).date()}")
 
+# No-CoT (covert) estimate: anchor from the Think Fast paper (arXiv 2606.07157) gap.
+# gpt-5.5 no-CoT task horizon >3 min vs its with-CoT horizon (~150x gap), and its
+# ~1,500-reasoning-token horizon at ~30 tokens/checkable line, both give a few dozen
+# ops today; grown at the paper's no-CoT doubling time of 373 days.
+NOCOT_ANCHOR_DATE = date(2026, 4, 23)   # gpt-5.5 release
+NOCOT_ANCHOR_OPS = 25                   # central estimate; range ~15-75
+x0 = mdates.date2num(NOCOT_ANCHOR_DATE)
+slope_nocot = math.log10(2) / 373
+x_no = [x0, mdates.date2num(date(2028, 12, 31))]
+ax.plot([mdates.num2date(a) for a in x_no],
+        [NOCOT_ANCHOR_OPS * 10 ** (slope_nocot * (a - x0)) for a in x_no],
+        ls="-.", color="#CC79A7", alpha=0.9, zorder=2,
+        label="no-CoT (covert) estimate, Think Fast gap, 373-day doubling")
+ax.errorbar([NOCOT_ANCHOR_DATE], [NOCOT_ANCHOR_OPS], yerr=[[10], [50]], fmt="s",
+            markersize=8, capsize=4, color="#CC79A7", markeredgecolor="white", zorder=3)
+ax.annotate("gpt-5.5 covert\n~25 ops", (NOCOT_ANCHOR_DATE, NOCOT_ANCHOR_OPS),
+            textcoords="offset points", xytext=(10, -18), fontsize=9, color="#CC79A7")
+
 ax.axhline(448, color="gray", lw=1, ls=":")
 ax.text(date(2024, 11, 1), 500, "measured length (448 ops, SHA-256 trace)", fontsize=8.5, color="gray")
 ax.set_yscale("log")
