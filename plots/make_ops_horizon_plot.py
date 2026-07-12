@@ -39,6 +39,20 @@ MODELS = [
 ]
 # gpt-4o and o3 are excluded: 0/42 detection is an engagement floor, not a length effect.
 
+# Frontier filter (Ram): keep only running-max points over time; gpt-5.5 (below the
+# earlier opus-4.6 point) drops out of both series. The fit is a frontier envelope.
+def frontier_filter(models_rows):
+    rows = sorted(models_rows, key=lambda m: m[1])
+    out, best = [], -1.0
+    for m in rows:
+        k_eff = min(m[2], m[3] - 0.5)
+        y = n50_from_r448(k_eff / m[3])
+        if y > best:
+            out.append(m); best = y
+    return out
+
+MODELS = frontier_filter(MODELS)
+
 xs, ys, ylo, yhi, labels, lbs = [], [], [], [], [], []
 CAP = 6_000_000
 for label, rel, k, n, lb in MODELS:
@@ -74,7 +88,7 @@ x_end = mdates.date2num(date(2028, 12, 31))
 xs_fit = [min(xo), x_end]
 ax.plot([mdates.num2date(a) for a in xs_fit],
         [10 ** (inter + slope * a) for a in xs_fit],
-        ls="--", color="#0072B2", alpha=0.6, zorder=2, label="trend (estimated points)")
+        ls="--", color="#0072B2", alpha=0.6, zorder=2, label="frontier envelope (estimated points; opus point is a lower bound)")
 double_days = math.log10(2) / slope
 print(f"doubling time: {double_days:.0f} days")
 for name, lo, hi, col in [("full ECDSA verify", 410_000, 800_000, "#E69F00"),
@@ -105,8 +119,9 @@ cxo = [mdates.date2num(x) for x in cov_x]
 cly = [math.log10(y) for y in cov_y]
 csx, csy = sum(cxo), sum(cly)
 csxx = sum(a * a for a in cxo); csxy = sum(a * b for a, b in zip(cxo, cly))
-cslope = (3 * csxy - csx * csy) / (3 * csxx - csx * csx)
-cinter = (csy - cslope * csx) / 3
+m_ = len(cxo)
+cslope = (m_ * csxy - csx * csy) / (m_ * csxx - csx * csx)
+cinter = (csy - cslope * csx) / m_
 ax.plot([mdates.num2date(a) for a in xs_fit],
         [10 ** (cinter + cslope * a) for a in xs_fit],
         ls="-.", color="#CC79A7", alpha=0.9, zorder=2,
@@ -119,7 +134,7 @@ ax.set_ylim(1, 8_000_000)
 ax.set_xlim(date(2024, 10, 1), date(2029, 1, 1))
 ax.set_xlabel("Model release date")
 ax.set_ylabel("Estimated 50%-reliability trace length (checkable operations, log)")
-ax.set_title("Trace-verification horizon over time (estimated, pending direct measurement)",
+ax.set_title("Trace-verification horizon over time, frontier models\n(estimated, pending direct measurement)",
              fontsize=12, weight="bold")
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
 ax.grid(True, axis="y", color="#DDDDDD", linewidth=0.8, zorder=0)
