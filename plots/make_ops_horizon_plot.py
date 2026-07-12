@@ -84,28 +84,38 @@ for name, lo, hi, col in [("full ECDSA verify", 410_000, 800_000, "#E69F00"),
     cross = (math.log10((lo * hi) ** 0.5) - inter) / slope
     print(f"{name}: trend crosses ~{mdates.num2date(cross).date()}")
 
-# No-CoT (covert) estimate: anchor from the Think Fast paper (arXiv 2606.07157) gap.
-# gpt-5.5 no-CoT task horizon >3 min vs its with-CoT horizon (~150x gap), and its
-# ~1,500-reasoning-token horizon at ~30 tokens/checkable line, both give a few dozen
-# ops today; grown at the paper's no-CoT doubling time of 373 days.
-NOCOT_ANCHOR_DATE = date(2026, 4, 23)   # gpt-5.5 release
-NOCOT_ANCHOR_OPS = 25                   # central estimate; range ~15-75
-x0 = mdates.date2num(NOCOT_ANCHOR_DATE)
-slope_nocot = math.log10(2) / 373
-x_no = [x0, mdates.date2num(date(2028, 12, 31))]
-ax.plot([mdates.num2date(a) for a in x_no],
-        [NOCOT_ANCHOR_OPS * 10 ** (slope_nocot * (a - x0)) for a in x_no],
+# No-CoT (covert) estimates, one point per model (Think Fast, arXiv 2606.07157).
+# Per-model no-CoT task horizon back-cast from the paper's frontier anchor
+# (gpt-5.5 ~3 min at 2026-04) along its 373-day doubling; per-model gap ratio =
+# with-CoT METR-style horizon / no-CoT horizon; covert N50 = N50_cot / ratio.
+WITHCOT_MIN = {"gpt-5": 203, "claude-opus-4.6": 719, "gpt-5.5": 993}
+anchor_num = mdates.date2num(date(2026, 4, 23))
+cov_x, cov_y = [], []
+for (label, rel, k, n, lb), y_cot in zip(MODELS, ys):
+    days_before = anchor_num - mdates.date2num(rel)
+    nocot_min = 3.0 / (2 ** (days_before / 373))
+    ratio = WITHCOT_MIN[label] / nocot_min
+    cov_x.append(rel); cov_y.append(y_cot / ratio)
+ax.plot(cov_x, cov_y, "s", markersize=8, color="#CC79A7",
+        markeredgecolor="white", markeredgewidth=1.2, zorder=3)
+for x, y, (label, *_ ) in zip(cov_x, cov_y, MODELS):
+    ax.annotate(f"{label} covert\n~{y:,.0f} ops", (x, y), textcoords="offset points",
+                xytext=(8, -22), fontsize=8.5, color="#CC79A7")
+cxo = [mdates.date2num(x) for x in cov_x]
+cly = [math.log10(y) for y in cov_y]
+csx, csy = sum(cxo), sum(cly)
+csxx = sum(a * a for a in cxo); csxy = sum(a * b for a, b in zip(cxo, cly))
+cslope = (3 * csxy - csx * csy) / (3 * csxx - csx * csx)
+cinter = (csy - cslope * csx) / 3
+ax.plot([mdates.num2date(a) for a in xs_fit],
+        [10 ** (cinter + cslope * a) for a in xs_fit],
         ls="-.", color="#CC79A7", alpha=0.9, zorder=2,
-        label="no-CoT (covert) estimate, Think Fast gap, 373-day doubling")
-ax.errorbar([NOCOT_ANCHOR_DATE], [NOCOT_ANCHOR_OPS], yerr=[[10], [50]], fmt="s",
-            markersize=8, capsize=4, color="#CC79A7", markeredgecolor="white", zorder=3)
-ax.annotate("gpt-5.5 covert\n~25 ops", (NOCOT_ANCHOR_DATE, NOCOT_ANCHOR_OPS),
-            textcoords="offset points", xytext=(10, -18), fontsize=9, color="#CC79A7")
+        label="covert (no visible reasoning) estimate, Think Fast gap")
 
 ax.axhline(448, color="gray", lw=1, ls=":")
-ax.text(date(2024, 11, 1), 500, "measured length (448 ops, SHA-256 trace)", fontsize=8.5, color="gray")
+ax.text(date(2024, 11, 1), 520, "measured length (448 ops, SHA-256 trace)", fontsize=8.5, color="gray")
 ax.set_yscale("log")
-ax.set_ylim(200, 8_000_000)
+ax.set_ylim(1, 8_000_000)
 ax.set_xlim(date(2024, 10, 1), date(2029, 1, 1))
 ax.set_xlabel("Model release date")
 ax.set_ylabel("Estimated 50%-reliability trace length (checkable operations, log)")
