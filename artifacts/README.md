@@ -22,4 +22,14 @@ commands in the repo `README.md` Reproduce block (Phase 3 section).
 | `replay_zero_calls.txt` | the zero-new-call replay: re-running gpt-4o full via Inspect cache uses `openrouter 0/30` connections (0 API calls), 10s vs 80s, and re-derives byte-identical outcomes. | re-run `inspect eval ... gpt-4o` |
 | `detection_r4r_vs_eci_v2.png`, `specificity_vs_eci_v2.png`, `phase1b_vs_phase3_r4r.png` | detection/specificity scale with ECI; Phase 1b->Phase 3 before/after (opus 8->42, gpt-5.5 5->37, gpt-5 0->22 of 42). | `python3 make_plots_v2.py` |
 
+## Full raw trace evidence (one file per representative interaction)
+
+`traces/` holds complete, untrimmed evidence files (full prompt sent, full model
+reasoning where captured, full visible response, scored outcome), one per headline
+interaction, so a reviewer can read exactly how each claim's interaction went rather
+than only seeing counts. The index and the claim each file backs are in
+[`traces/README.md`](traces/README.md). The idx-56 trace (a round-29 tamper) recurs
+across several files as a controlled cross-model, cross-rendering contrast on one input:
+opus-4.6 and gpt-5.5 both catch it on the dual rendering and both miss it on binary.
+
 Full per-line provenance is in `../results_v2.jsonl`.
