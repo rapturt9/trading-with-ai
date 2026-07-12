@@ -28,6 +28,7 @@ import subprocess
 from inspect_ai import Task, task
 from inspect_ai.dataset import Sample, MemoryDataset
 from inspect_ai.model import GenerateConfig
+from inspect_ai.model._cache import CachePolicy
 from inspect_ai.scorer import scorer, Score, Target, CORRECT, INCORRECT, accuracy, stderr
 from inspect_ai.solver import TaskState, generate
 
@@ -194,7 +195,8 @@ def _balanced_slice(balanced_n):
 @task
 def sha256_tamper_v2(model_key: str, renderer: str = "dual", prompt_variant: str = "v2",
                      reasoning_effort: str = None, max_tokens: int = None,
-                     n_per_bucket: int = 14, pilot_n: int = None, balanced_n: int = None):
+                     n_per_bucket: int = 14, pilot_n: int = None, balanced_n: int = None,
+                     sample_ids: str = None, resample_tag: str = None):
     """Phase 3 task. All levers are -T parameters.
 
     model_key      : org/model, selects effort/cap defaults + ECI (crash-loud if unknown)
@@ -202,6 +204,15 @@ def sha256_tamper_v2(model_key: str, renderer: str = "dual", prompt_variant: str
     prompt_variant : 'v2' (only variant; kept as an explicit lever)
     reasoning_effort / max_tokens : override the per-model defaults if given
     n_per_bucket   : 14 => full N=84; smaller for pilots (mixed slice below)
+    sample_ids     : comma-separated true dataset indices (0-83) to run, e.g.
+                      "0,5,10,11,20,28". Targets an exact subset (e.g. specific
+                      UNPARSEABLE completion-run samples) instead of a slice.
+    resample_tag   : when set, busts Inspect's native cache (CachePolicy.scopes)
+                      so a byte-identical (model, prompt, config) rerun makes a
+                      genuinely NEW API call instead of replaying the cached
+                      result for free. Needed when max_tokens is already at the
+                      provider's real ceiling (no config field left to change)
+                      and you still want a fresh stochastic resample.
     """
     if model_key not in MAX_EFFORT_REASONING_PARAMS:
         raise ValueError(f"unknown model_key {model_key!r}, not in MAX_EFFORT_REASONING_PARAMS")
@@ -217,7 +228,15 @@ def sha256_tamper_v2(model_key: str, renderer: str = "dual", prompt_variant: str
     if effort:
         config.reasoning_effort = effort
 
-    if balanced_n is not None:
+    if sample_ids is not None:
+        # Inspect's -T CLI parser auto-splits a comma-separated value into a
+        # list before it reaches here, so this arrives as either a str
+        # ("0,5,10") from a direct Python call or a list ([0, 5, 10]) from
+        # `inspect eval ... -T sample_ids=0,5,10`.
+        ids = [int(x) for x in sample_ids.split(",")] if isinstance(sample_ids, str) else [int(x) for x in sample_ids]
+        full = build_dataset()
+        indexed = [(i, full[i]) for i in ids]
+    elif balanced_n is not None:
         indexed = _balanced_slice(balanced_n)  # Arm B: 50/50 genuine/tampered subset
     elif pilot_n is not None:
         indexed = _pilot_slice(pilot_n)  # exact-count mixed slice
@@ -228,9 +247,10 @@ def sha256_tamper_v2(model_key: str, renderer: str = "dual", prompt_variant: str
 
     dataset = MemoryDataset([_make_sample(idx, item, renderer) for idx, item in indexed])
 
+    cache = CachePolicy(scopes={"resample_tag": resample_tag}) if resample_tag else True
     return Task(
         dataset=dataset,
-        solver=[generate(cache=True)],  # native Inspect cache -> free replay
+        solver=[generate(cache=cache)],  # native Inspect cache -> free replay (unless busted)
         scorer=r4r_v2_scorer(model_key, renderer, effort or "none", cap),
         config=config,
     )
