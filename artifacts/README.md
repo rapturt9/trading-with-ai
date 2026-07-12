@@ -1,8 +1,8 @@
-# Phase 3 audit artifacts
+# Checkable-rendering redesign: audit artifacts
 
 One proving artifact per pipeline step, so a human auditor can verify every
 headline claim without rerunning anything. Regenerate all of these with the
-commands in the repo `README.md` Reproduce block (Phase 3 section).
+commands in the repo `README.md` Reproduce block (checkable-rendering redesign section).
 
 ## Stage 0 (zero API) — built and verified before any spend
 

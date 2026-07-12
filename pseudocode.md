@@ -1,11 +1,11 @@
 ---
-status: as-built (Phase 1 complete 336/336; Phase 1b complete 420/420; Inspect redo complete 420/420)
+status: as-built (medium-effort raw-trace run complete 336/336; max-effort raw-trace run complete 420/420; Inspect redo complete 420/420)
 updated: 2026-07-08
 ---
 
 # What this is
 
-The curated mechanistic map of the RQ3-replacement harness. Read this alone to understand how it works and where each piece lives. Every path below is real, executed code -- see `README.md` for Phase 1 and Phase 1b results.
+The curated mechanistic map of the trace-verification harness. Read this alone to understand how it works and where each piece lives. Every path below is real, executed code -- see `README.md` for the medium- and max-effort raw-trace-run results.
 
 # Experimental setup, full picture
 

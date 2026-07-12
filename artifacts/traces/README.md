@@ -3,8 +3,8 @@
 One file per representative interaction. Each file is RAW and untrimmed: the complete prompt actually sent, the model's full reasoning content where the provider returned it, the full visible response, and the scored outcome, clearly delimited by `====` bars. Nothing here is paraphrased. Open a file to read exactly how one interaction went.
 
 Provenance sources:
-- Phase 3 / Arm B / probes come from the Inspect `.eval` logs in [`../../logs_inspect_v2/`](../../logs_inspect_v2), extracted per sample by `zipfile` plus `json` (the raw-zip path, since `read_eval_log()` fails on the `reasoning_effort="max"` logs). Model reasoning is in the assistant message's `reasoning` content block; the visible answer is the `text` block.
-- Phase 1b (binary) comes from the per-call cache in [`../../cache/`](../../cache), located by reconstructing the cache key with `run_experiment.py`'s own `cache_key(model, prompt, idx, tag)` function (not reimplemented). Cache entries from 2026-07-07 on store the prompt, the reasoning content, the response, and any refusal text.
+- The checkable-rendering redesign, control run, and probes come from the Inspect `.eval` logs in [`../../logs_inspect_v2/`](../../logs_inspect_v2), extracted per sample by `zipfile` plus `json` (the raw-zip path, since `read_eval_log()` fails on the `reasoning_effort="max"` logs). Model reasoning is in the assistant message's `reasoning` content block; the visible answer is the `text` block.
+- The max-effort raw-trace run (binary) comes from the per-call cache in [`../../cache/`](../../cache), located by reconstructing the cache key with `run_experiment.py`'s own `cache_key(model, prompt, idx, tag)` function (not reimplemented). Cache entries from 2026-07-07 on store the prompt, the reasoning content, the response, and any refusal text.
 
 The idx-56 trace (a middle-bucket tamper at round 29, seed 57) recurs across several files on purpose: it is the same trace seen by many models under both renderings, so the files together are a controlled cross-model, cross-rendering contrast on ONE input.
 

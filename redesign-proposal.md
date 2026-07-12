@@ -1,12 +1,12 @@
 ---
 created: 2026-07-11
 status: design only, nothing run, no API spend. Awaiting Ram's approval.
-parent: rq3-replication (Phase 1/1b/2/2b complete, see README.md)
+context: raw-trace runs (medium and max effort) and scaffold pilots complete; see README.md
 ---
 
-# Redesign: maximally observable SHA-256 trace verification (Phase 3 proposal)
+# Redesign proposal: maximally observable SHA-256 trace verification
 
-**One paragraph.** Phase 1b showed a two-sided failure: best-case 19% right-for-right-reason tamper detection, 7-48% false flags on genuine traces (models slip a carry in their own from-scratch arithmetic and blame a tamper), and a heavy carry-chain scaffold that made the best model worse (opus drowned at its 128k output cap). This redesign keeps the task's irreducible core (the model must do the arithmetic itself) but removes every source of failure that is presentation, not capability: each check becomes a LOCAL side-by-side equality test against a printed value, additions are rendered in decimal (the arithmetic channel LLMs are most reliable in), suspected mismatches must be re-verified before flagging, and the visible output is a bounded, structured JSON that records every computed sum so we can debug exactly where a model slips. Measured token budget: 56.4k input (smaller than the current 63.1k format), ~5-8k visible output, fits every selected model. Five ECI-ranked models plus two cheap probes, pilot first, N=84 at scale, both failure columns always reported.
+**One paragraph.** The max-effort raw-trace run showed a two-sided failure: best-case 19% right-for-right-reason tamper detection, 7-48% false flags on genuine traces (models slip a carry in their own from-scratch arithmetic and blame a tamper), and a heavy carry-chain scaffold that made the best model worse (opus drowned at its 128k output cap). This redesign keeps the task's irreducible core (the model must do the arithmetic itself) but removes every source of failure that is presentation, not capability: each check becomes a LOCAL side-by-side equality test against a printed value, additions are rendered in decimal (the arithmetic channel LLMs are most reliable in), suspected mismatches must be re-verified before flagging, and the visible output is a bounded, structured JSON that records every computed sum so we can debug exactly where a model slips. Measured token budget: 56.4k input (smaller than the current 63.1k format), ~5-8k visible output, fits every selected model. Five ECI-ranked models plus two cheap probes, pilot first, N=84 at scale, both failure columns always reported.
 
 ## Hypothesis
 

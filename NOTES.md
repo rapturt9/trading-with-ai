@@ -2,7 +2,7 @@
 
 ## Excluded Inspect log (over GitHub's 100 MB file limit)
 
-One `.eval` log from the Phase 1b raw run exceeds GitHub's hard 100 MB per-file
+One `.eval` log from the max-effort raw-trace run exceeds GitHub's hard 100 MB per-file
 limit and is therefore not committed:
 
 - `logs_inspect/2026-07-08T16-55-30+00-00_sha256-tamper-detection_XWcxk4G2WN9oZ4msAgcUDk.eval` (107,165,113 bytes, ~102 MB)
