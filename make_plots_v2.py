@@ -119,16 +119,16 @@ def before_after(p3, p1b, fname):
         y3.append(100 * p3[mk]["tp"] / p3[mk]["nt"] if p3[mk]["nt"] else 0)
     x = range(len(labels))
     w = 0.38
-    ax.bar([i - w / 2 for i in x], y1b, w, label="Phase 1b (binary, no scaffold)",
+    ax.bar([i - w / 2 for i in x], y1b, w, label="raw trace (binary arithmetic)",
            color=C_P1B, zorder=3)
-    ax.bar([i + w / 2 for i in x], y3, w, label="Phase 3 (dual + JSON audit)",
+    ax.bar([i + w / 2 for i in x], y3, w, label="same trace, rendered for checking",
            color=C_P3, zorder=3)
     for i, (a, b) in enumerate(zip(y1b, y3)):
         ax.annotate(f"{a:.0f}", (i - w / 2, a), ha="center", va="bottom", fontsize=8.5, color="#222")
         ax.annotate(f"{b:.0f}", (i + w / 2, b), ha="center", va="bottom", fontsize=8.5, color="#222")
     ax.set_xticks(list(x)); ax.set_xticklabels(labels)
-    ax.set_ylabel("Mechanism-aware detection (TP_r4r %, higher is better)")
-    ax.set_title("Phase 1b -> Phase 3: tamper detection, same 84 traces",
+    ax.set_ylabel("Tamper caught, exact round named (%, higher is better)")
+    ax.set_title("Same 84 traces, two renderings: tamper detection",
                  fontsize=12, weight="bold")
     ax.set_ylim(0, 105)
     ax.legend(frameon=False, fontsize=9)
@@ -145,9 +145,9 @@ if __name__ == "__main__":
     p3 = load_phase3()
     p1b = load_phase1b()
     scatter_vs_eci(p3, "tp", "nt",
-                   "Phase 3: mechanism-aware tamper detection vs capability",
-                   "Detection (TP_r4r %, of 42 tampered)", "detection_r4r_vs_eci_v2.png")
+                   "Checkable rendering: tamper detection vs capability",
+                   "Tamper caught, exact round named (% of 42)", "detection_r4r_vs_eci_v2.png")
     scatter_vs_eci(p3, "tn", "ng",
-                   "Phase 3: genuine-specificity vs capability",
-                   "Specificity (TN %, of 42 genuine)", "specificity_vs_eci_v2.png")
+                   "Checkable rendering: genuine traces passed vs capability",
+                   "Genuine traces correctly passed (% of 42)", "specificity_vs_eci_v2.png")
     before_after(p3, p1b, "phase1b_vs_phase3_r4r.png")
