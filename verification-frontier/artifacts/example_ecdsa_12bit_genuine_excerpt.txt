@@ -1,0 +1,103 @@
+# GENUINE 12-bit-field ECDSA verify trace excerpt (Curve(bits=12, p=4051, b=9, n=1327, h=3), 417 op lines). Full trace is 17577 chars; excerpt below is the first 4000, for human inspection (full trace verified
+# programmatically in the self-test sweep above, not by eyeballing this excerpt).
+
+L0001: Toy ECDSA verify, 12-bit field p=4051, subgroup order n=1327, curve y^2 = x^3 + 9 (a=0), G=(3829,1858)
+L0002: Given: Q=(734,726), signature (r=861, s=857), message hash z=1166 (hash-to-scalar stubbed, z given directly)
+L0003: --- header: w, u1, u2 ---
+L0004:   [inverse-check] w = 1279
+L0005:   [multiplication] u1_raw = 1491314
+L0006:   [reduction] u1 = 1093
+L0007:   [multiplication] u2_raw = 1101219
+L0008:   [reduction] u2 = 1136
+L0009: --- ladder 1: u1 * G ---
+L0010:   op 0 [DOUBLE] x1=3829 y1=1858
+L0011:     [multiplication] x1sq_raw = 14661241
+L0012:     [reduction] x1sq = 672
+L0013:     [multiplication] numerator_raw = 2016
+L0014:     [reduction] numerator = 2016
+L0015:     [addition] denominator = 3716
+L0016:     [inverse-check] inv = 3398
+L0017:     [multiplication] lam_raw = 6850368
+L0018:     [reduction] lam = 127
+L0019:     [multiplication] lamsq_raw = 16129
+L0020:     [reduction] lamsq = 3976
+L0021:     [addition] two_x1 = 3607
+L0022:     [addition] x3 = 369
+L0023:     [addition] diff = 3460
+L0024:     [multiplication] t2_raw = 439420
+L0025:     [reduction] t2 = 1912
+L0026:     [addition] y3 = 54
+L0027:   op 1 [DOUBLE] x1=369 y1=54
+L0028:     [multiplication] x1sq_raw = 136161
+L0029:     [reduction] x1sq = 2478
+L0030:     [multiplication] numerator_raw = 7434
+L0031:     [reduction] numerator = 3383
+L0032:     [addition] denominator = 108
+L0033:     [inverse-check] inv = 1988
+L0034:     [multiplication] lam_raw = 6725404
+L0035:     [reduction] lam = 744
+L0036:     [multiplication] lamsq_raw = 553536
+L0037:     [reduction] lamsq = 2600
+L0038:     [addition] two_x1 = 738
+L0039:     [addition] x3 = 1862
+L0040:     [addition] diff = 2558
+L0041:     [multiplication] t2_raw = 1903152
+L0042:     [reduction] t2 = 3233
+L0043:     [addition] y3 = 3179
+L0044:   op 2 [DOUBLE] x1=1862 y1=3179
+L0045:     [multiplication] x1sq_raw = 3467044
+L0046:     [reduction] x1sq = 3439
+L0047:     [multiplication] numerator_raw = 10317
+L0048:     [reduction] numerator = 2215
+L0049:     [addition] denominator = 2307
+L0050:     [inverse-check] inv = 1252
+L0051:     [multiplication] lam_raw = 2773180
+L0052:     [reduction] lam = 2296
+L0053:     [multiplication] lamsq_raw = 5271616
+L0054:     [reduction] lamsq = 1265
+L0055:     [addition] two_x1 = 3724
+L0056:     [addition] x3 = 1592
+L0057:     [addition] diff = 270
+L0058:     [multiplication] t2_raw = 619920
+L0059:     [reduction] t2 = 117
+L0060:     [addition] y3 = 989
+L0061:   op 3 [DOUBLE] x1=1592 y1=989
+L0062:     [multiplication] x1sq_raw = 2534464
+L0063:     [reduction] x1sq = 2589
+L0064:     [multiplication] numerator_raw = 7767
+L0065:     [reduction] numerator = 3716
+L0066:     [addition] denominator = 1978
+L0067:     [inverse-check] inv = 2857
+L0068:     [multiplication] lam_raw = 10616612
+L0069:     [reduction] lam = 2992
+L0070:     [multiplication] lamsq_raw = 8952064
+L0071:     [reduction] lamsq = 3405
+L0072:     [addition] two_x1 = 3184
+L0073:     [addition] x3 = 221
+L0074:     [addition] diff = 1371
+L0075:     [multiplication] t2_raw = 4102032
+L0076:     [reduction] t2 = 2420
+L0077:     [addition] y3 = 1431
+L0078:   op 4 [ADD] x1=221 y1=1431 x2=3829 y2=1858
+L0079:     [addition] numerator = 427
+L0080:     [addition] denominator = 3608
+L0081:     [inverse-check] inv = 823
+L0082:     [multiplication] lam_raw = 351421
+L0083:     [reduction] lam = 3035
+L0084:     [multiplication] lamsq_raw = 9211225
+L0085:     [reduction] lamsq = 3302
+L0086:     [addition] t3 = 3081
+L0087:     [addition] x3 = 3303
+L0088:     [addition] diff = 969
+L0089:     [multiplication] t2_raw = 2940915
+L0090:     [reduction] t2 = 3940
+L0091:     [addition] y3 = 2509
+L0092:   op 5 [DOUBLE] x1=3303 y1=2509
+L0093:     [multiplication] x1sq_raw = 10909809
+L0094:     [reduction] x1sq = 466
+L0095:     [multiplication] numerator_raw = 1398
+L0096:     [reduction] numerator = 1398
+L0097:     [addition] denominator = 967
+L0098:     [inverse-check] inv = 1948
+L0099:     [multiplication] lam_raw = 2723304
+L0100:     [red

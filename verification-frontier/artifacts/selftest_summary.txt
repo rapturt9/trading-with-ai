@@ -1,0 +1,51 @@
+=== SHA multi-block + tamper-class self-tests ===
+[SHA n_blocks=1] 5 genuine seeds: digest==hashlib and 0 inconsistent lines, all pass
+[SHA n_blocks=2] 5 genuine seeds: digest==hashlib and 0 inconsistent lines, all pass
+[SHA n_blocks=4] 5 genuine seeds: digest==hashlib and 0 inconsistent lines, all pass
+[SHA n_blocks=8] 5 genuine seeds: digest==hashlib and 0 inconsistent lines, all pass
+[SHA n_blocks=1] all buckets x 5 seeds x 3 tamper classes (addition/bitwise/schedule_word): exactly-one-flag invariant holds
+[SHA n_blocks=2] all buckets x 5 seeds x 3 tamper classes (addition/bitwise/schedule_word): exactly-one-flag invariant holds
+[SHA n_blocks=4] all buckets x 5 seeds x 3 tamper classes (addition/bitwise/schedule_word): exactly-one-flag invariant holds
+[SHA n_blocks=8] all buckets x 5 seeds x 3 tamper classes (addition/bitwise/schedule_word): exactly-one-flag invariant holds
+
+=== Toy-field ECDSA verify + line-tamper self-tests ===
+[ECDSA bits=8] constructed Curve(bits=8, p=223, b=5, n=229, h=1)
+[ECDSA bits=8] 5 genuine seeds: matches Jacobian reference verify, 0 inconsistent lines, traced 'v == r' check passes, final point R always on curve
+[ECDSA bits=8] corrupted-signature self-test: reference verify correctly returns False
+[ECDSA bits=8] all buckets x 5 seeds, one seeded line-level tamper (op type chosen by whichever line the position bucket lands on): exactly-one-flag invariant holds
+[ECDSA bits=8] on-curve diagnostic: header-section tampers 0/0 still on curve (expected ~100%, algebraic -- any scalar multiple of a curve point is on the curve); non-header tampers 0/15 on curve (expected ~0%, a corroborating signal, not the primary one)
+[ECDSA bits=12] constructed Curve(bits=12, p=4051, b=9, n=1327, h=3)
+[ECDSA bits=12] 5 genuine seeds: matches Jacobian reference verify, 0 inconsistent lines, traced 'v == r' check passes, final point R always on curve
+[ECDSA bits=12] corrupted-signature self-test: reference verify correctly returns False
+[ECDSA bits=12] all buckets x 5 seeds, one seeded line-level tamper (op type chosen by whichever line the position bucket lands on): exactly-one-flag invariant holds
+[ECDSA bits=12] on-curve diagnostic: header-section tampers 0/0 still on curve (expected ~100%, algebraic -- any scalar multiple of a curve point is on the curve); non-header tampers 0/15 on curve (expected ~0%, a corroborating signal, not the primary one)
+[ECDSA bits=16] constructed Curve(bits=16, p=65479, b=3, n=16477, h=4)
+[ECDSA bits=16] 5 genuine seeds: matches Jacobian reference verify, 0 inconsistent lines, traced 'v == r' check passes, final point R always on curve
+[ECDSA bits=16] corrupted-signature self-test: reference verify correctly returns False
+[ECDSA bits=16] all buckets x 5 seeds, one seeded line-level tamper (op type chosen by whichever line the position bucket lands on): exactly-one-flag invariant holds
+[ECDSA bits=16] on-curve diagnostic: header-section tampers 0/0 still on curve (expected ~100%, algebraic -- any scalar multiple of a curve point is on the curve); non-header tampers 0/15 on curve (expected ~0%, a corroborating signal, not the primary one)
+
+=== Real P-256 verification fragment self-tests (Stage 0c) ===
+[P256 n_ops=1] 5 genuine seeds: matches independent Jacobian fast-forward (start AND end), 0 inconsistent lines (202 lines/fragment)
+[P256 n_ops=1] all buckets x 5 seeds, one seeded line-level tamper: exactly-one-flag invariant holds
+[P256 n_ops=2] 5 genuine seeds: matches independent Jacobian fast-forward (start AND end), 0 inconsistent lines (472 lines/fragment)
+[P256 n_ops=2] all buckets x 5 seeds, one seeded line-level tamper: exactly-one-flag invariant holds
+[P256 n_ops=4] 5 genuine seeds: matches independent Jacobian fast-forward (start AND end), 0 inconsistent lines (944 lines/fragment)
+[P256 n_ops=4] all buckets x 5 seeds, one seeded line-level tamper: exactly-one-flag invariant holds
+[P256 n_ops=8] 5 genuine seeds: matches independent Jacobian fast-forward (start AND end), 0 inconsistent lines (1956 lines/fragment)
+[P256 n_ops=8] all buckets x 5 seeds, one seeded line-level tamper: exactly-one-flag invariant holds
+[P256] corrupted-signature self-test: independent reference verify correctly returns False
+
+=== Report-shaped SHA payload self-tests (Stage 0c) ===
+[report-payload n_blocks=1] 5 genuine seeds + all buckets x 5 tampered seeds: reuses the SHA family's own invariants, all pass
+[report-payload n_blocks=2] 5 genuine seeds + all buckets x 5 tampered seeds: reuses the SHA family's own invariants, all pass
+[report-payload n_blocks=4] 5 genuine seeds + all buckets x 5 tampered seeds: reuses the SHA family's own invariants, all pass
+[report-payload n_blocks=8] 5 genuine seeds + all buckets x 5 tampered seeds: reuses the SHA family's own invariants, all pass
+
+=== Composite mini-attestation self-tests (Stage 0c) ===
+[composite p256_n_ops=2] genuine: 0 inconsistent lines across both halves (sha~448 lines, p256=472 lines)
+[composite p256_n_ops=2] all buckets x 8 seeds: exactly-one-flag invariant holds across the composite; tamper landed in sha half 9x, p256 half 15x (weighted by real line count)
+[composite p256_n_ops=4] genuine: 0 inconsistent lines across both halves (sha~448 lines, p256=944 lines)
+[composite p256_n_ops=4] all buckets x 8 seeds: exactly-one-flag invariant holds across the composite; tamper landed in sha half 6x, p256 half 18x (weighted by real line count)
+
+=== TOTAL: 0 failures across all self-tests ===

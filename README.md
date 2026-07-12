@@ -10,6 +10,8 @@ confidence: high (N=84 x 5 models main run + n=28 control-run attribution contro
 
 This repo is the standalone reproducibility package for the experiment behind the LessWrong post "Making credible deals with AIs" by Ram Potham (link added when the post is live).
 
+**Companion experiment.** [`verification-frontier/`](verification-frontier/) measures how long a cryptographic trace a model can verify: the number of word-level operations at which its tamper-detection reliability crosses 50%, tracked across model release dates. It is the measured horizon experiment behind the post's Figure 3, and it extends the SHA-256 verification code in this root package to multi-block SHA-256, real NIST P-256 ECDSA, and composite attestation traces.
+
 A clean, minimal, fully reproducible replacement for the earlier informal writeup's numbers on this question (the only quantitative support in the post for "AIs can verify TEE attestations via chain-of-thought"). Built because Ram doesn't trust that writeup's rigor or reproducibility enough to put his name behind its numbers in public. Everything here is either pure local computation (already verified against `hashlib`) or a harness that has not yet made a single API call [true at the time of writing; the completed runs and their costs are reported above].
 
 ## The pre-run decision record (kept as written)

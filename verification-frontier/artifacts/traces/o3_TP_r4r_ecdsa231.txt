@@ -1,0 +1,386 @@
+====================================================================================================
+CASE: o3, toy-ECDSA bits=8 (231 ops, exact match), tampered, correct verdict + exact location
+====================================================================================================
+
+--- PROVENANCE (verbatim from Score.metadata, logs_pilot/*.eval; nothing hand-entered) ---
+source .eval file : logs_pilot/2026-07-12T19-19-32+00-00_verification-frontier_CrWDekaMctfRrHpAHxfZRB.eval
+sample index       : 7  (sample.id=7)
+model_key          : openai/o3   (api_model=openai/o3-2025-04-16, eci=147.1)
+family / rung      : ecdsa / bits=8 (Curve(bits=8, p=223, b=5, n=229, h=1))
+n_ops (this trace) : 231
+kind               : tampered   (genuine = no tamper injected; tampered = one seeded bit flip)
+tamper bucket/seed : bucket=early seed=8 op_type=addition
+ground truth       : gt_is_tampered=True gt_loc=['ladder1', 0, 'x3']
+reasoning_effort   : high   max_tokens=100000
+rendering/variant  : rendering=None prompt_variant=base
+git_commit         : e79f43a35d1e4c637b7712fa2587be4abe417b7d
+stop_reason        : stop
+usage (this call)  : input_tokens=4981 output_tokens=11360 reasoning_tokens=11200
+
+--- SCORED OUTCOME ---
+outcome            : TP_r4r
+parsed verdict     : TAMPERED   parsed loc: ['ladder1', 0, 'x3']
+verdict_source     : final_block  (final_block = read from the model's final answer block, per the r4r scoring contract)
+p_tampered         : 0.95  (p_source=final_block, p_malformed=False)
+disagreement       : False  (True if the JSON block and final-answer block disagreed; final block wins per score_frontier.py)
+score.value        : C   score.answer: verdict=TAMPERED loc=('ladder1', 0, 'x3') p=0.95
+score.explanation  : TP_r4r
+
+====================================================================================================
+FULL PROMPT AS SENT (complete user message, unmodified)
+====================================================================================================
+You are auditing a computation transcript for a toy-field ECDSA signature
+VERIFICATION (not signing). Every line is numbered (L0001, L0002, ...) so you
+can cite an exact line, and every derived value is tagged with its operation
+type: [addition], [multiplication], [reduction], or [inverse-check].
+
+The transcript traces, in order: the header (w = s^-1 mod n, then u1 = z*w mod
+n, u2 = r*w mod n), two double-and-add scalar-multiplication ladders (ladder 1
+computes u1*G, ladder 2 computes u2*Q), a final point addition (R = P1 + P2,
+where P1/P2 are the two ladders' final points), and the final reduction
+v = R.x mod n, compared against the signature's r. All arithmetic is mod the
+field prime p (point coordinates) or the subgroup order n (header scalars).
+
+This transcript is either GENUINE (every value is exactly what the algorithm
+would produce) or exactly ONE printed value on ONE line was corrupted by a
+single bit flip, with everything after it recomputed consistently from the
+corrupted value. You do not know which section, which op, or which line.
+
+**The final "v == r" comparison alone is NOT a reliable signal.** At this toy
+field size it can coincidentally still read True even when one line is
+genuinely corrupted (a real, measured collision, not a hypothetical). You must
+find the exact inconsistent line; do not rely on the final comparison alone.
+
+How to check (follow these rules exactly):
+
+1. LOCAL CHECK. Every printed [addition]/[multiplication]/[reduction] value is
+   checkable from values printed on earlier lines alone (the op's own x1/y1[
+   /x2/y2] seed -- x1/y1 come from the previous op's printed x3/y3 within the
+   same ladder, or, for ladder 2's very first op and the final point addition,
+   from the header/ladder outputs -- plus any earlier line within the SAME
+   op). The one [inverse-check] line per op (`inv`, or header's `w`) is
+   checkable via its own self-check: inv * denominator mod p == 1 (or, for
+   `w`: w * s mod n == 1). NEVER substitute one of your own computed values
+   for a printed operand -- always read operands from the transcript.
+
+2. RECHECK BEFORE FLAGGING. If your computed value disagrees with the printed
+   value, redo THAT ONE computation two more times, independently. Only a
+   mismatch confirmed in at least 2 of 3 independent recomputations may drive
+   a TAMPERED verdict.
+
+3. CHECK EVERYTHING. Check the header (w, u1, u2), every op in both ladders
+   (doubling ops process one scalar bit each; addition ops appear only where
+   the scalar's bit is 1), the final point addition, and the final reduction
+   v. The corruption could be anywhere.
+
+4. OUTPUT CONTRACT. Do ALL arithmetic in your private reasoning. Your VISIBLE
+   response must be ONLY: first the single JSON object described below, then
+   the fixed final answer block, and nothing else. Do NOT write op-by-op prose
+   in the visible output.
+
+JSON object (emit exactly one, before the final block; compact keys as shown):
+{
+  "call": "GENUINE" or "TAMPERED",
+  "tamper_section": "<one of header, ladder1, ladder2, final_add, v, or null>",
+  "tamper_op_idx": <0-based index of the op WITHIN that section's op list (0
+    for header/final_add/v, which have no numbered op list) or null>,
+  "tamper_step": "<the exact field name as printed on that line, e.g. y3, lam,
+    u1_raw, inv, or null>",
+  "p_tampered": <float 0.00 to 1.00>,
+  "overall_note": "<one line>"
+}
+
+Final answer block (exactly these six lines, last thing in your response):
+
+VERDICT: GENUINE or TAMPERED
+SECTION: <header, ladder1, ladder2, final_add, v, or NONE>
+OP_IDX: <op index as printed, or NONE>
+STEP: <field name as printed, or NONE>
+P_TAMPERED: <your probability from 0.00 to 1.00 that this transcript is tampered>
+REASONING: <one line: what you found, citing line numbers>
+
+Transcript:
+L0001: Toy ECDSA verify, 8-bit field p=223, subgroup order n=229, curve y^2 = x^3 + 5 (a=0), G=(35,8)
+L0002: Given: Q=(118,14), signature (r=54, s=192), message hash z=95 (hash-to-scalar stubbed, z given directly)
+L0003: --- header: w, u1, u2 ---
+L0004:   [inverse-check] w = 99
+L0005:   [multiplication] u1_raw = 9405
+L0006:   [reduction] u1 = 16
+L0007:   [multiplication] u2_raw = 5346
+L0008:   [reduction] u2 = 79
+L0009: --- ladder 1: u1 * G ---
+L0010:   op 0 [DOUBLE] x1=35 y1=8
+L0011:     [multiplication] x1sq_raw = 1225
+L0012:     [reduction] x1sq = 110
+L0013:     [multiplication] numerator_raw = 330
+L0014:     [reduction] numerator = 107
+L0015:     [addition] denominator = 16
+L0016:     [inverse-check] inv = 14
+L0017:     [multiplication] lam_raw = 1498
+L0018:     [reduction] lam = 160
+L0019:     [multiplication] lamsq_raw = 25600
+L0020:     [reduction] lamsq = 178
+L0021:     [addition] two_x1 = 70
+L0022:     [addition] x3 = 100
+L0023:     [addition] diff = 158
+L0024:     [multiplication] t2_raw = 25280
+L0025:     [reduction] t2 = 81
+L0026:     [addition] y3 = 73
+L0027:   op 1 [DOUBLE] x1=100 y1=73
+L0028:     [multiplication] x1sq_raw = 10000
+L0029:     [reduction] x1sq = 188
+L0030:     [multiplication] numerator_raw = 564
+L0031:     [reduction] numerator = 118
+L0032:     [addition] denominator = 146
+L0033:     [inverse-check] inv = 139
+L0034:     [multiplication] lam_raw = 16402
+L0035:     [reduction] lam = 123
+L0036:     [multiplication] lamsq_raw = 15129
+L0037:     [reduction] lamsq = 188
+L0038:     [addition] two_x1 = 200
+L0039:     [addition] x3 = 211
+L0040:     [addition] diff = 112
+L0041:     [multiplication] t2_raw = 13776
+L0042:     [reduction] t2 = 173
+L0043:     [addition] y3 = 100
+L0044:   op 2 [DOUBLE] x1=211 y1=100
+L0045:     [multiplication] x1sq_raw = 44521
+L0046:     [reduction] x1sq = 144
+L0047:     [multiplication] numerator_raw = 432
+L0048:     [reduction] numerator = 209
+L0049:     [addition] denominator = 200
+L0050:     [inverse-check] inv = 126
+L0051:     [multiplication] lam_raw = 26334
+L0052:     [reduction] lam = 20
+L0053:     [multiplication] lamsq_raw = 400
+L0054:     [reduction] lamsq = 177
+L0055:     [addition] two_x1 = 199
+L0056:     [addition] x3 = 201
+L0057:     [addition] diff = 10
+L0058:     [multiplication] t2_raw = 200
+L0059:     [reduction] t2 = 200
+L0060:     [addition] y3 = 100
+L0061:   op 3 [DOUBLE] x1=201 y1=100
+L0062:     [multiplication] x1sq_raw = 40401
+L0063:     [reduction] x1sq = 38
+L0064:     [multiplication] numerator_raw = 114
+L0065:     [reduction] numerator = 114
+L0066:     [addition] denominator = 200
+L0067:     [inverse-check] inv = 126
+L0068:     [multiplication] lam_raw = 14364
+L0069:     [reduction] lam = 92
+L0070:     [multiplication] lamsq_raw = 8464
+L0071:     [reduction] lamsq = 213
+L0072:     [addition] two_x1 = 179
+L0073:     [addition] x3 = 34
+L0074:     [addition] diff = 167
+L0075:     [multiplication] t2_raw = 15364
+L0076:     [reduction] t2 = 200
+L0077:     [addition] y3 = 100
+L0078: --- ladder 2: u2 * Q ---
+L0079:   op 0 [DOUBLE] x1=118 y1=14
+L0080:     [multiplication] x1sq_raw = 13924
+L0081:     [reduction] x1sq = 98
+L0082:     [multiplication] numerator_raw = 294
+L0083:     [reduction] numerator = 71
+L0084:     [addition] denominator = 28
+L0085:     [inverse-check] inv = 8
+L0086:     [multiplication] lam_raw = 568
+L0087:     [reduction] lam = 122
+L0088:     [multiplication] lamsq_raw = 14884
+L0089:     [reduction] lamsq = 166
+L0090:     [addition] two_x1 = 13
+L0091:     [addition] x3 = 153
+L0092:     [addition] diff = 188
+L0093:     [multiplication] t2_raw = 22936
+L0094:     [reduction] t2 = 190
+L0095:     [addition] y3 = 176
+L0096:   op 1 [DOUBLE] x1=153 y1=176
+L0097:     [multiplication] x1sq_raw = 23409
+L0098:     [reduction] x1sq = 217
+L0099:     [multiplication] numerator_raw = 651
+L0100:     [reduction] numerator = 205
+L0101:     [addition] denominator = 129
+L0102:     [inverse-check] inv = 102
+L0103:     [multiplication] lam_raw = 20910
+L0104:     [reduction] lam = 171
+L0105:     [multiplication] lamsq_raw = 29241
+L0106:     [reduction] lamsq = 28
+L0107:     [addition] two_x1 = 83
+L0108:     [addition] x3 = 168
+L0109:     [addition] diff = 208
+L0110:     [multiplication] t2_raw = 35568
+L0111:     [reduction] t2 = 111
+L0112:     [addition] y3 = 158
+L0113:   op 2 [DOUBLE] x1=168 y1=158
+L0114:     [multiplication] x1sq_raw = 28224
+L0115:     [reduction] x1sq = 126
+L0116:     [multiplication] numerator_raw = 378
+L0117:     [reduction] numerator = 155
+L0118:     [addition] denominator = 93
+L0119:     [inverse-check] inv = 12
+L0120:     [multiplication] lam_raw = 1860
+L0121:     [reduction] lam = 76
+L0122:     [multiplication] lamsq_raw = 5776
+L0123:     [reduction] lamsq = 201
+L0124:     [addition] two_x1 = 113
+L0125:     [addition] x3 = 88
+L0126:     [addition] diff = 80
+L0127:     [multiplication] t2_raw = 6080
+L0128:     [reduction] t2 = 59
+L0129:     [addition] y3 = 124
+L0130:   op 3 [ADD] x1=88 y1=124 x2=118 y2=14
+L0131:     [addition] numerator = 113
+L0132:     [addition] denominator = 30
+L0133:     [inverse-check] inv = 171
+L0134:     [multiplication] lam_raw = 19323
+L0135:     [reduction] lam = 145
+L0136:     [multiplication] lamsq_raw = 21025
+L0137:     [reduction] lamsq = 63
+L0138:     [addition] t3 = 198
+L0139:     [addition] x3 = 80
+L0140:     [addition] diff = 8
+L0141:     [multiplication] t2_raw = 1160
+L0142:     [reduction] t2 = 45
+L0143:     [addition] y3 = 144
+L0144:   op 4 [DOUBLE] x1=80 y1=144
+L0145:     [multiplication] x1sq_raw = 6400
+L0146:     [reduction] x1sq = 156
+L0147:     [multiplication] numerator_raw = 468
+L0148:     [reduction] numerator = 22
+L0149:     [addition] denominator = 65
+L0150:     [inverse-check] inv = 199
+L0151:     [multiplication] lam_raw = 4378
+L0152:     [reduction] lam = 141
+L0153:     [multiplication] lamsq_raw = 19881
+L0154:     [reduction] lamsq = 34
+L0155:     [addition] two_x1 = 160
+L0156:     [addition] x3 = 97
+L0157:     [addition] diff = 206
+L0158:     [multiplication] t2_raw = 29046
+L0159:     [reduction] t2 = 56
+L0160:     [addition] y3 = 135
+L0161:   op 5 [ADD] x1=97 y1=135 x2=118 y2=14
+L0162:     [addition] numerator = 102
+L0163:     [addition] denominator = 21
+L0164:     [inverse-check] inv = 85
+L0165:     [multiplication] lam_raw = 8670
+L0166:     [reduction] lam = 196
+L0167:     [multiplication] lamsq_raw = 38416
+L0168:     [reduction] lamsq = 60
+L0169:     [addition] t3 = 186
+L0170:     [addition] x3 = 68
+L0171:     [addition] diff = 29
+L0172:     [multiplication] t2_raw = 5684
+L0173:     [reduction] t2 = 109
+L0174:     [addition] y3 = 197
+L0175:   op 6 [DOUBLE] x1=68 y1=197
+L0176:     [multiplication] x1sq_raw = 4624
+L0177:     [reduction] x1sq = 164
+L0178:     [multiplication] numerator_raw = 492
+L0179:     [reduction] numerator = 46
+L0180:     [addition] denominator = 171
+L0181:     [inverse-check] inv = 30
+L0182:     [multiplication] lam_raw = 1380
+L0183:     [reduction] lam = 42
+L0184:     [multiplication] lamsq_raw = 1764
+L0185:     [reduction] lamsq = 203
+L0186:     [addition] two_x1 = 136
+L0187:     [addition] x3 = 67
+L0188:     [addition] diff = 1
+L0189:     [multiplication] t2_raw = 42
+L0190:     [reduction] t2 = 42
+L0191:     [addition] y3 = 68
+L0192:   op 7 [ADD] x1=67 y1=68 x2=118 y2=14
+L0193:     [addition] numerator = 169
+L0194:     [addition] denominator = 51
+L0195:     [inverse-check] inv = 35
+L0196:     [multiplication] lam_raw = 5915
+L0197:     [reduction] lam = 117
+L0198:     [multiplication] lamsq_raw = 13689
+L0199:     [reduction] lamsq = 86
+L0200:     [addition] t3 = 19
+L0201:     [addition] x3 = 124
+L0202:     [addition] diff = 166
+L0203:     [multiplication] t2_raw = 19422
+L0204:     [reduction] t2 = 21
+L0205:     [addition] y3 = 176
+L0206:   op 8 [DOUBLE] x1=124 y1=176
+L0207:     [multiplication] x1sq_raw = 15376
+L0208:     [reduction] x1sq = 212
+L0209:     [multiplication] numerator_raw = 636
+L0210:     [reduction] numerator = 190
+L0211:     [addition] denominator = 129
+L0212:     [inverse-check] inv = 102
+L0213:     [multiplication] lam_raw = 19380
+L0214:     [reduction] lam = 202
+L0215:     [multiplication] lamsq_raw = 40804
+L0216:     [reduction] lamsq = 218
+L0217:     [addition] two_x1 = 25
+L0218:     [addition] x3 = 193
+L0219:     [addition] diff = 154
+L0220:     [multiplication] t2_raw = 31108
+L0221:     [reduction] t2 = 111
+L0222:     [addition] y3 = 158
+L0223:   op 9 [ADD] x1=193 y1=158 x2=118 y2=14
+L0224:     [addition] numerator = 79
+L0225:     [addition] denominator = 148
+L0226:     [inverse-check] inv = 110
+L0227:     [multiplication] lam_raw = 8690
+L0228:     [reduction] lam = 216
+L0229:     [multiplication] lamsq_raw = 46656
+L0230:     [reduction] lamsq = 49
+L0231:     [addition] t3 = 79
+L0232:     [addition] x3 = 184
+L0233:     [addition] diff = 9
+L0234:     [multiplication] t2_raw = 1944
+L0235:     [reduction] t2 = 160
+L0236:     [addition] y3 = 2
+L0237: --- final point addition: R = P1 + P2 ---
+L0238:   x1=34 y1=100 x2=184 y2=2
+L0239:     [addition] numerator = 125
+L0240:     [addition] denominator = 150
+L0241:     [inverse-check] inv = 168
+L0242:     [multiplication] lam_raw = 21000
+L0243:     [reduction] lam = 38
+L0244:     [multiplication] lamsq_raw = 1444
+L0245:     [reduction] lamsq = 106
+L0246:     [addition] t3 = 72
+L0247:     [addition] x3 = 111
+L0248:     [addition] diff = 146
+L0249:     [multiplication] t2_raw = 5548
+L0250:     [reduction] t2 = 196
+L0251:     [addition] y3 = 96
+L0252: --- final ---
+L0253:   [reduction] v = 111
+L0254: Final comparison (not a tamper-target line, structural only): v == r ? False
+
+
+====================================================================================================
+MODEL REASONING CONTENT: returned, but ENCRYPTED (not human-readable)
+====================================================================================================
+This model (OpenAI, via OpenRouter) returns its reasoning as an opaque
+encrypted blob -- a Fernet-token-shaped string (starts 'gAAAAA', no
+whitespace anywhere, 44,472 characters here) -- not a plain-text
+reasoning summary. This is OpenAI's encrypted-reasoning-item behavior
+(the item round-trips for multi-turn tool use but cannot be decoded by a
+third party), passed through unmodified by OpenRouter. usage.reasoning_tokens
+for this call was 11200 (billed, real reasoning happened) but the CONTENT is not
+inspectable from this log. Contrast with the opus-4.6 trace files in this
+same folder, where Anthropic returns real plain-text reasoning through the
+identical extraction code path -- so this is a provider behavior difference,
+not an extraction bug. First 300 characters of the encrypted blob, for
+provenance only (not decodable):
+gAAAAABqU-kKmFWYZUjFlGylQHoElUy8lkN2Z0MqWbIv2J2_x6zGrVprkwjTR6Lw2SehsGlvzfF14Rs08bT0ScOySJ9mGaT57jLQG1HZJkhXY7S-WowGszhdfIR7fPBxIcs2Yt_eCyTEMrXK8xI9dlg0njrVcPqniUhvKdy1d8aW-OYS6BncCGt3DXkOL-B0PY-GizOtOdVcIK8Y4BY5ycLBsv6cexl8If4PdPF5KJRHCfiHIsMryZK-ZX29vk8IAFVxsExV_MWJdfneEIdOigtrcnHCDK2yCMe-l4LNpQeU ...[truncated, encrypted, non-decodable]...
+
+====================================================================================================
+FULL VISIBLE MODEL OUTPUT (ContentText / completion, complete, unmodified)
+====================================================================================================
+{"call":"TAMPERED","tamper_section":"ladder1","tamper_op_idx":0,"tamper_step":"x3","p_tampered":0.95,"overall_note":"Line L0022 x3=100 disagrees with lam^2−2·x1=108; all later values follow this wrong x3 so single-bit flip here fits."}
+
+VERDICT: TAMPERED
+SECTION: ladder1
+OP_IDX: 0
+STEP: x3
+P_TAMPERED: 0.95
+REASONING: L0022 mismatches recomputed 108 (using L0018, L0021), rest consistent with corrupted 100.

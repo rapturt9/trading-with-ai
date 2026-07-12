@@ -61,25 +61,46 @@ def compute_message_schedule(block):
     return W[:64] if len(W) == 64 else W
 
 
-def compress(W, tamper_step=None, tamper_bit=None, n_rounds=64):
-    """Run n_rounds compression rounds (64 = real SHA-256). If tamper_step
-    is set, flip tamper_bit in the working-variable state produced by that
-    round before continuing, so everything after is recomputed from the
-    tampered state (self-consistent downstream, exactly like the original
-    chippy design).
+def compress(W, tamper_step=None, tamper_bit=None, n_rounds=64, init_state=None, start_round=0):
+    """Run n_rounds compression rounds (64 = real SHA-256) starting at
+    absolute round index start_round. If tamper_step is set, flip
+    tamper_bit in the working-variable state produced by that round before
+    continuing, so everything after is recomputed from the tampered state
+    (self-consistent downstream, exactly like the original chippy design).
 
     Every round records not just the combined temp1/temp2 but the
     intermediate pairwise sums building up to temp1 (h+S1, +ch, +K[t]),
     so the trace can show "smaller operations before bigger ones" instead
     of one opaque 5-term sum.
 
+    init_state: the 8 working words to start the first round from (defaults
+    to H0, the single-block case). Passing the previous block's `final`
+    here is what lets a caller chain multiple blocks (Merkle-Damgard
+    construction) without duplicating this function; added for
+    verification-frontier's multi-block SHA generator, backward-compatible
+    (default unchanged).
+
+    start_round: the absolute round index (indexes into K/W) that the loop
+    begins at; range(n_rounds) becomes range(start_round, start_round +
+    n_rounds). Lets a caller resume compression mid-block from an
+    already-tampered round's shifted state -- recorded round["t"] stays the
+    true absolute index -- instead of duplicating this loop body to cascade
+    a within-round tamper class (bitwise/schedule-word/addition, not just
+    the final new_a) through the rest of the block; added for
+    verification-frontier's tamper-class stratification. Backward-compatible
+    (default 0 reproduces the original range(n_rounds)).
+
     Returns the list of per-round states and the final hash words (final
-    is only a real SHA-256 digest input when n_rounds == 64).
+    is only a real SHA-256 digest input when n_rounds == 64, start_round ==
+    0, and, for a chained call, init_state is the prior block's final).
     """
     assert 1 <= n_rounds <= 64
-    a, b, c, d, e, f, g, h = H0
+    assert 0 <= start_round and start_round + n_rounds <= 64
+    if init_state is None:
+        init_state = H0
+    a, b, c, d, e, f, g, h = init_state
     rounds = []
-    for t in range(n_rounds):
+    for t in range(start_round, start_round + n_rounds):
         S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)
         ch = (e & f) ^ (~e & g) & MASK32
         step1 = (h + S1) & MASK32
@@ -114,8 +135,10 @@ def compress(W, tamper_step=None, tamper_bit=None, n_rounds=64):
         a, b, c, d, e, f, g, h = new_a, new_b, new_c, new_d, new_e, new_f, new_g, new_h
 
     final = [
-        (H0[0] + a) & MASK32, (H0[1] + b) & MASK32, (H0[2] + c) & MASK32, (H0[3] + d) & MASK32,
-        (H0[4] + e) & MASK32, (H0[5] + f) & MASK32, (H0[6] + g) & MASK32, (H0[7] + h) & MASK32,
+        (init_state[0] + a) & MASK32, (init_state[1] + b) & MASK32,
+        (init_state[2] + c) & MASK32, (init_state[3] + d) & MASK32,
+        (init_state[4] + e) & MASK32, (init_state[5] + f) & MASK32,
+        (init_state[6] + g) & MASK32, (init_state[7] + h) & MASK32,
     ]
     return rounds, final
 
@@ -272,11 +295,12 @@ def _fmt_dec(x):
 
 
 def render_dual(trace, line_numbers=True, binary_bitops=True, binary_new=True,
-                decimal_additions=True):
+                decimal_additions=True, binary_state=True, tag_op_types=False):
     """Phase 3 dual renderer: binary for bitwise ops, DECIMAL for additions.
 
     Sibling of render_trace(); every lever is a parameter. Per round it prints:
-      - the 8 input state words a_in..h_in, each in binary AND decimal;
+      - the 8 input state words a_in..h_in, each in binary AND decimal (or
+        decimal-only if binary_state is False);
       - the 4 bitwise results S1, ch, S0, maj, in binary (and decimal if
         binary_bitops) -- these are checked bit-by-bit, so binary is primary;
       - the 7 modular additions step1/step2/step3/temp1/temp2/new_a/new_e in
@@ -284,6 +308,21 @@ def render_dual(trace, line_numbers=True, binary_bitops=True, binary_new=True,
         (binary_new) because they feed the next round's bitwise ops;
       - NO shift line: round t+1's input block reprints the state, so the
         chain check survives as a string comparison across rounds.
+
+    binary_state: added for verification-frontier's decimal-densified rung
+    (drop the binary column entirely to shrink token count for the SHA
+    length-scaling axis); False makes the message schedule W[] and the
+    per-round a_in..h_in state words decimal-only too, so with
+    binary_bitops=binary_new=False the whole trace is decimal-only.
+    Backward-compatible: default True reproduces the original dual output.
+
+    tag_op_types: added for verification-frontier's op-counting convention
+    (locked 2026-07-12) -- when True, prefixes each derived-value line with
+    its op type ("[bitwise]" for S1/ch/S0/maj, "[addition]" for
+    step1/step2/step3/temp1/temp2/new a/new e), matching the tagging
+    ecdsa_trace.py's renderer already does, so the per-op-type reliability
+    analysis has the same visible tag in both families. Backward-compatible
+    (default False reproduces the original untagged output).
 
     Both representations of every value come from the SAME integer, so binary
     and decimal always agree (including at the tampered value). The tamper (a
@@ -296,16 +335,20 @@ def render_dual(trace, line_numbers=True, binary_bitops=True, binary_new=True,
     b = lambda x: _fmt_word(x, "binary")
     d = _fmt_dec
     L = _Liner(line_numbers)
+    tag = (lambda t: f"[{t}] ") if tag_op_types else (lambda t: "")
 
     def dual(x):
         """binary AND decimal, e.g. '0110 ... 0111 = 1779033703'."""
         return f"{b(x)} = {d(x)}"
 
+    sw = dual if binary_state else d
+
     L.add(f"Message (hex): {trace['message'].hex()}")
     n_rounds = trace["n_rounds"]
-    L.add(f"Message schedule W[0..{n_rounds - 1}] (binary and decimal):")
+    W_label = "binary and decimal" if binary_state else "decimal"
+    L.add(f"Message schedule W[0..{n_rounds - 1}] ({W_label}):")
     for i, word in enumerate(trace["W"]):
-        L.add(f"  W[{i}] = {dual(word)}")
+        L.add(f"  W[{i}] = {sw(word)}")
     L.blank()
     if n_rounds == 64:
         L.add("Compression, 64 rounds (standard single-block SHA-256). Bitwise results "
@@ -319,33 +362,33 @@ def render_dual(trace, line_numbers=True, binary_bitops=True, binary_new=True,
               "difficulty). Bitwise results in binary, additions in decimal, state words "
               "and new_a/new_e in both; both representations always agree.")
     for r in trace["rounds"]:
-        L.add(f"round {r['t']} (K[{r['t']}] = {dual(r['K'])}, W[{r['t']}] = {dual(r['W'])}):")
-        L.add(f"  a_in = {dual(r['a_in'])}")
-        L.add(f"  b_in = {dual(r['b_in'])}")
-        L.add(f"  c_in = {dual(r['c_in'])}")
-        L.add(f"  d_in = {dual(r['d_in'])}")
-        L.add(f"  e_in = {dual(r['e_in'])}")
-        L.add(f"  f_in = {dual(r['f_in'])}")
-        L.add(f"  g_in = {dual(r['g_in'])}")
-        L.add(f"  h_in = {dual(r['h_in'])}")
+        L.add(f"round {r['t']} (K[{r['t']}] = {sw(r['K'])}, W[{r['t']}] = {sw(r['W'])}):")
+        L.add(f"  a_in = {sw(r['a_in'])}")
+        L.add(f"  b_in = {sw(r['b_in'])}")
+        L.add(f"  c_in = {sw(r['c_in'])}")
+        L.add(f"  d_in = {sw(r['d_in'])}")
+        L.add(f"  e_in = {sw(r['e_in'])}")
+        L.add(f"  f_in = {sw(r['f_in'])}")
+        L.add(f"  g_in = {sw(r['g_in'])}")
+        L.add(f"  h_in = {sw(r['h_in'])}")
         s1 = dual(r['S1']) if binary_bitops else d(r['S1'])
         ch = dual(r['ch']) if binary_bitops else d(r['ch'])
         s0 = dual(r['S0']) if binary_bitops else d(r['S0'])
         maj = dual(r['maj']) if binary_bitops else d(r['maj'])
-        L.add(f"  S1 = ROTR(e,6) xor ROTR(e,11) xor ROTR(e,25) = {s1}")
-        L.add(f"  ch = (e and f) xor (not e and g) = {ch}")
+        L.add(f"  {tag('bitwise')}S1 = ROTR(e,6) xor ROTR(e,11) xor ROTR(e,25) = {s1}")
+        L.add(f"  {tag('bitwise')}ch = (e and f) xor (not e and g) = {ch}")
         add = d if decimal_additions else (lambda x: dual(x))
-        L.add(f"  step1 = h_in + S1 mod 2^32 = {add(r['step1'])}")
-        L.add(f"  step2 = step1 + ch mod 2^32 = {add(r['step2'])}")
-        L.add(f"  step3 = step2 + K[{r['t']}] mod 2^32 = {add(r['step3'])}")
-        L.add(f"  temp1 = step3 + W[{r['t']}] mod 2^32 = {add(r['temp1'])}")
-        L.add(f"  S0 = ROTR(a,2) xor ROTR(a,13) xor ROTR(a,22) = {s0}")
-        L.add(f"  maj = (a and b) xor (a and c) xor (b and c) = {maj}")
-        L.add(f"  temp2 = S0 + maj mod 2^32 = {add(r['temp2'])}")
+        L.add(f"  {tag('addition')}step1 = h_in + S1 mod 2^32 = {add(r['step1'])}")
+        L.add(f"  {tag('addition')}step2 = step1 + ch mod 2^32 = {add(r['step2'])}")
+        L.add(f"  {tag('addition')}step3 = step2 + K[{r['t']}] mod 2^32 = {add(r['step3'])}")
+        L.add(f"  {tag('addition')}temp1 = step3 + W[{r['t']}] mod 2^32 = {add(r['temp1'])}")
+        L.add(f"  {tag('bitwise')}S0 = ROTR(a,2) xor ROTR(a,13) xor ROTR(a,22) = {s0}")
+        L.add(f"  {tag('bitwise')}maj = (a and b) xor (a and c) xor (b and c) = {maj}")
+        L.add(f"  {tag('addition')}temp2 = S0 + maj mod 2^32 = {add(r['temp2'])}")
         new_a = dual(r['a']) if binary_new else add(r['a'])
         new_e = dual(r['e']) if binary_new else add(r['e'])
-        L.add(f"  new a = temp1 + temp2 mod 2^32 = {new_a}")
-        L.add(f"  new e = d_in + temp1 mod 2^32 = {new_e}")
+        L.add(f"  {tag('addition')}new a = temp1 + temp2 mod 2^32 = {new_a}")
+        L.add(f"  {tag('addition')}new e = d_in + temp1 mod 2^32 = {new_e}")
     L.blank()
     L.add(f"Final digest: {trace['digest']}")
     return L.text()
