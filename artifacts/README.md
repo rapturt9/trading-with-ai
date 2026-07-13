@@ -20,7 +20,7 @@ commands in the repo `README.md` Reproduce block (checkable-rendering redesign s
 | `phase3_metrics_table.txt` | the full metric suite per model (detection, specificity, AUROC+CI, TPR@5%FP, Brier, arithmetic-error, per-position, UNPARSEABLE) + pilot gates + total cost, all from the `.eval` logs. | `python3 analyze_checkable.py --gates` |
 | `sample_eval_excerpt.txt` | one opus-4.6 sample: full provenance block + visible JSON audit output + confirmation reasoning content is captured in the log. | read from `logs_inspect_checkable/*.eval` |
 | `replay_zero_calls.txt` | the zero-new-call replay: re-running gpt-4o full via Inspect cache uses `openrouter 0/30` connections (0 API calls), 10s vs 80s, and re-derives byte-identical outcomes. | re-run `inspect eval ... gpt-4o` |
-| `detection_r4r_vs_eci_v2.png`, `specificity_vs_eci_v2.png`, `phase1b_vs_phase3_r4r.png` | detection/specificity scale with ECI; Phase 1b->Phase 3 before/after (opus 8->42, gpt-5.5 5->37, gpt-5 0->22 of 42). | `python3 make_plots_checkable.py` |
+| `detection_vs_capability.png`, `specificity_vs_capability.png`, `raw_vs_checkable_detection.png` | detection/specificity scale with ECI; Phase 1b->Phase 3 before/after (opus 8->42, gpt-5.5 5->37, gpt-5 0->22 of 42). | `python3 make_plots_checkable.py` |
 
 ## Full raw trace evidence (one file per representative interaction)
 

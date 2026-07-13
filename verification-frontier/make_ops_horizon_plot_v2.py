@@ -24,7 +24,7 @@ labeled. This is an extrapolation from very few, mostly-bracketed points,
 not a precise measurement -- exactly the caveat Ram asked for wherever N90
 appears, extended here to the whole plot's honesty label.
 
-Run: python3 make_ops_horizon_plot_v2.py   (writes ops_horizon_vs_time_v2.png; no API calls)
+Run: python3 make_ops_horizon_plot_v2.py   (writes verification_horizon_measured.png; no API calls)
 """
 import math
 import os
@@ -183,7 +183,7 @@ def main():
     ax.spines[["top", "right"]].set_visible(False)
     ax.legend(frameon=False, fontsize=8, loc="lower right")
     fig.tight_layout()
-    out = os.path.join(HERE, "ops_horizon_vs_time_v2.png")
+    out = os.path.join(HERE, "verification_horizon_measured.png")
     fig.savefig(out, dpi=150)
     print("wrote", out)
 

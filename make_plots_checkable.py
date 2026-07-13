@@ -3,9 +3,9 @@ results_maxeffort.jsonl (Phase 1b baseline). No API calls. Colorblind-safe,
 CI error bars, one axis, direct-labeled points (dataviz skill).
 
 Outputs (plots/):
-  detection_r4r_vs_eci_v2.png    - mechanism-aware detection vs ECI, 95% Wilson CI
-  specificity_vs_eci_v2.png      - genuine-specificity vs ECI, 95% Wilson CI
-  phase1b_vs_phase3_r4r.png      - before/after grouped bars, per model
+  detection_vs_capability.png    - mechanism-aware detection vs ECI, 95% Wilson CI
+  specificity_vs_capability.png      - genuine-specificity vs ECI, 95% Wilson CI
+  raw_vs_checkable_detection.png      - before/after grouped bars, per model
 
 Run: python3 make_plots_checkable.py
 """
@@ -146,8 +146,8 @@ if __name__ == "__main__":
     p1b = load_phase1b()
     scatter_vs_eci(p3, "tp", "nt",
                    "Checkable rendering: tamper detection vs capability",
-                   "Tamper caught, exact round named (% of 42)", "detection_r4r_vs_eci_v2.png")
+                   "Tamper caught, exact round named (% of 42)", "detection_vs_capability.png")
     scatter_vs_eci(p3, "tn", "ng",
                    "Checkable rendering: genuine traces passed vs capability",
-                   "Genuine traces correctly passed (% of 42)", "specificity_vs_eci_v2.png")
-    before_after(p3, p1b, "phase1b_vs_phase3_r4r.png")
+                   "Genuine traces correctly passed (% of 42)", "specificity_vs_capability.png")
+    before_after(p3, p1b, "raw_vs_checkable_detection.png")

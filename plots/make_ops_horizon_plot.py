@@ -6,7 +6,7 @@ detection reliability at the single measured length (448 operations, checkable
 rendering, results_checkable.jsonl) under reliability(N) = r448^(N/448). The
 verification-frontier experiment replaces them with directly measured points.
 
-Run: python3 make_ops_horizon_plot.py   (writes ops_horizon_vs_time.png; no API calls)
+Run: python3 make_ops_horizon_plot.py   (writes verification_horizon_over_time.png; no API calls)
 """
 import json
 import math
@@ -141,6 +141,6 @@ ax.grid(True, axis="y", color="#DDDDDD", linewidth=0.8, zorder=0)
 ax.spines[["top", "right"]].set_visible(False)
 ax.legend(frameon=False, fontsize=9, loc="lower right")
 fig.tight_layout()
-out = os.path.join(HERE, "ops_horizon_vs_time.png")
+out = os.path.join(HERE, "verification_horizon_over_time.png")
 fig.savefig(out, dpi=150)
 print("wrote", out)

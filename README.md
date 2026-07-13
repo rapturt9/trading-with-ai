@@ -224,13 +224,13 @@ ECI values are pulled from the authoritative source (`epoch.ai/data/eci_scores.c
 | `gpt-5.5` | 158.5 | ~993 min (estimated) | 5/42 (11.9%) |
 | `claude-fable-5` | 160.8 | ~1458 min (estimated) | refused (no data) |
 
-![Right-for-right-reason detection vs ECI, no monotonic relationship](plots/tp_r4r_vs_eci.png)
+![Right-for-right-reason detection vs ECI, no monotonic relationship](plots/raw_detection_vs_capability.png)
 
-![Right-for-right-reason detection vs time horizon, no monotonic relationship](plots/tp_r4r_vs_horizon.png)
+![Right-for-right-reason detection vs time horizon, no monotonic relationship](plots/raw_detection_vs_horizon.png)
 
 Both plots show the same picture as the tables above: neither the ECI axis nor the time-horizon axis (real or estimated) predicts verification skill on this task. The two highest-ECI/highest-estimated-horizon models tested (`claude-fable-5`, `claude-opus-4.8`) are also the two that could not produce usable data at all -- one refuses, one runs out of budget -- which is itself informative: higher general capability did not translate into being easier to even run this eval on.
 
-![Time horizon vs tamper detection Pareto frontier: an upward trend along the frontier despite non-monotonic raw points](plots/tp_r4r_vs_horizon_pareto.png)
+![Time horizon vs tamper detection Pareto frontier: an upward trend along the frontier despite non-monotonic raw points](plots/raw_detection_vs_horizon_pareto.png)
 
 Applying the same Pareto-frontier logic to (horizon, detection) as to (cost, detection) below **does surface a trend line**, even though the raw scatter above looks non-monotonic. Of the 5 live-run models, the frontier (lower horizon and higher-or-equal detection than every other point) is `gpt-4o` (7 min, 0.0%) -> `o3` (120 min, 2.4%) -> `claude-opus-4.6` (719 min, 19.0%), rising monotonically. `gpt-5` and `gpt-5.5` are both dominated: each is beaten by a lower-horizon model that detects equal-or-more (`gpt-5` by `o3`; `gpt-5.5`, whose horizon is ECI-estimated, by `claude-opus-4.6`, which has both a lower horizon and higher detection). So there is a real capability-detection trend once the two off-frontier models are set aside -- it just is not visible by eye in the raw scatter, and it rests on only 3 frontier points, so treat the shape as suggestive, not a fitted relationship.
 
@@ -331,7 +331,7 @@ AUROC here is computed over the full pool of 84 traces from the model's reported
 
 **Attribution control (control run) -- decisive.** `gpt-5.5` on the OLD binary rendering with the identical new prompt + JSON schema (n=28): detection collapses to **3/14 (21%)** and its per-addition arithmetic-error rate jumps to **3.6%** (vs **0.01%** on the dual/decimal rendering, a ~270x reduction: exact rates 3.637% vs 0.013%). Since only the rendering changed, this attributes essentially the entire gain to **decimal arithmetic** -- the exact failing operation from the raw-trace run (max effort) (carry slips in binary/hex mental math). The JSON audit layer makes the mechanism visible: models compute decimal sums almost perfectly and catch the single inconsistent line; in binary they slip carries, and one slip either misses the tamper or (on genuine traces) manufactures a false flag.
 
-**The raw-trace run (max effort) -> the checkable-rendering redesign, same 84 traces** (`plots/phase1b_vs_phase3_r4r.png`): gpt-4o 0->0, o3 1->0, gpt-5 0->22, opus-4.6 8->42, gpt-5.5 5->37 (out of 42). Scaling plots: `plots/detection_r4r_vs_eci_v2.png`, `plots/specificity_vs_eci_v2.png`.
+**The raw-trace run (max effort) -> the checkable-rendering redesign, same 84 traces** (`plots/raw_vs_checkable_detection.png`): gpt-4o 0->0, o3 1->0, gpt-5 0->22, opus-4.6 8->42, gpt-5.5 5->37 (out of 42). Scaling plots: `plots/detection_vs_capability.png`, `plots/specificity_vs_capability.png`.
 
 **Honest framing (from the proposal's validity section):** this is the MAXIMAL-OBSERVABILITY bound -- "can a frontier model verify a trace rendered for checkability," not "will it spontaneously verify any trace." A second bound in the same direction: the tampers are seeded single-bit flips spread across position buckets, NOT adversarially optimized against the verifier; nobody searched for the round a given model finds hardest to check, and a real adversary can iterate tamper placement against a fixed model until it finds blind spots. An adversarial-tamper arm is the natural follow-up. In a real TEE deployment the protocol designer chooses the attestation format, so the format-optimized number is the deployment-relevant one; the raw-trace run (max effort) remains the number for adversarially/carelessly formatted traces. Both are reported.
 
@@ -354,9 +354,9 @@ AUROC here is computed over the full pool of 84 traces from the model's reported
 - Every API response is cached to `cache/<hash>.json`, keyed on `(model, exact prompt text, sample index, tag)` -- `tag` differs by phase (`main-...` vs `maxeffort-...`) so the two phases never collide, and the exact prompt and response for any real call made in this experiment can be inspected directly. Cache entries written from 2026-07-07 onward also store the full raw prompt text, the model's reasoning/thinking content (`message.reasoning`/`message.reasoning_details`), and any refusal text -- entries from the raw-trace run (medium effort) (before that date) only have `{model, prompt_hash, response, usage}` (see `pseudocode.md`'s "Known gap" section).
 - `results.jsonl`: the raw-trace run (medium effort)'s 336 scored outcomes. `results_maxeffort.jsonl`: the raw-trace run (max effort)'s 420 scored outcomes. `results_maxeffort_pilot.jsonl`: the 7-model pilot's 56 scored outcomes (a separate file on purpose -- pilot and live modes used to share one filename, and a pilot rerun silently overwrote the live result once; fixed in `run_variant()`, see `pseudocode.md`). Same schema, one line per (model, trace) pair.
 - `example_trace_full.txt`: one complete, real, untruncated prompt exactly as sent to a model (binary format, line-numbered, decomposed arithmetic, 64-round genuine-schedule trace with an early-bucket tamper), for direct inspection without running any code.
-- `plots/tp_r4r_vs_eci.png`, `plots/tp_r4r_vs_horizon.png`: right-for-right-reason rate vs Epoch Capability Index and vs METR time horizon (real + ECI-estimated), generated from the exact per-model counts in the tables above.
+- `plots/raw_detection_vs_capability.png`, `plots/raw_detection_vs_horizon.png`: right-for-right-reason rate vs Epoch Capability Index and vs METR time horizon (real + ECI-estimated), generated from the exact per-model counts in the tables above.
 - `plots/cost_vs_accuracy_pareto.png`: real per-call cost vs detection rate for the 5 live-run models, with the Pareto frontier computed directly (not eyeballed).
-- `plots/tp_r4r_vs_horizon_pareto.png`: same horizon-vs-detection data as `tp_r4r_vs_horizon.png`, with the Pareto frontier drawn as a dashed trend curve and dominated models marked. Regenerate with `python3 plots/make_pareto_horizon_plot.py` (embeds the same n=42 counts as the table above; no API calls).
+- `plots/raw_detection_vs_horizon_pareto.png`: same horizon-vs-detection data as `raw_detection_vs_horizon.png`, with the Pareto frontier drawn as a dashed trend curve and dominated models marked. Regenerate with `python3 plots/make_pareto_horizon_plot.py` (embeds the same n=42 counts as the table above; no API calls).
 - The harness makes concurrent API calls (`ThreadPoolExecutor`, `MAX_WORKERS=16` in `run_experiment.py`) since `claude-opus-4.6`/`gpt-5.5`/`claude-opus-4.8` completions can take 10+ minutes each at max effort; this only affects wall-clock time, not which calls get made or their results.
 - Full setup and control-flow diagrams (mermaid): `pseudocode.md`.
 - `inspect_task.py`: the Inspect (`inspect_ai`) port of the raw-trace run (max effort), reusing `build_dataset`/`build_prompt`/`render_trace`/`score.py` directly. One model at a time (each needs its own `reasoning_effort`/`max_tokens`):
@@ -385,20 +385,20 @@ Every command below is copy-paste runnable from a clean checkout with `OPENROUTE
 5. **Control run (attribution control): gpt-5.5, OLD binary rendering + NEW prompt+schema, n=28:** `inspect eval inspect_task_checkable.py --model openrouter/openai/gpt-5.5 -T model_key=openai/gpt-5.5 -T renderer=binary -T balanced_n=28 --log-dir logs_inspect_checkable --max-connections 30`
 6. **Pilot slices (already covered by cache above):** add `-T pilot_n=8` (Stage 1/2), `-T pilot_n=6` (Stage 3 opus-4.6/gpt-5.5), `-T pilot_n=2` (probes: `anthropic/claude-opus-4.8`, `anthropic/claude-fable-5`).
 7. **ZERO-NEW-CALL REPLAY (the reproducibility gold standard):** re-run any the main run/B command above -- Inspect serves every sample from cache, making **zero new API calls** -- then `python3 analyze_checkable.py --gates` re-derives `results_checkable.jsonl` and every headline number (metric suite, AUROC + bootstrap CIs, per-position, per-addition error rate, cost) identically. Proof of the zero-call replay is in `artifacts/replay_zero_calls.txt`.
-8. **Regenerate results, metrics, and plots from the logs (zero API):** `python3 analyze_checkable.py --gates` (writes `results_checkable.jsonl` + the full metric table + cost) and `python3 make_plots_checkable.py` (writes `plots/detection_r4r_vs_eci_v2.png`, `plots/specificity_vs_eci_v2.png`, `plots/phase1b_vs_phase3_r4r.png`).
+8. **Regenerate results, metrics, and plots from the logs (zero API):** `python3 analyze_checkable.py --gates` (writes `results_checkable.jsonl` + the full metric table + cost) and `python3 make_plots_checkable.py` (writes `plots/detection_vs_capability.png`, `plots/specificity_vs_capability.png`, `plots/raw_vs_checkable_detection.png`).
 9. **2026-07-12 completion runs (the 8 genuine-side no-verdict samples, opus-4.6 x6 + o3 x2, dual arm) -- NOT a free replay, real new calls by design.** `resample_tag` busts Inspect's cache on purpose (see `COMPLETION_RUNS.md` for the per-sample table and why a plain rerun cannot make a new call here):
     - `inspect eval inspect_task_checkable.py --model openrouter/anthropic/claude-opus-4.6 -T model_key=anthropic/claude-opus-4.6 -T sample_ids=0,5,10,11,20,28 -T resample_tag=completion-fix-20260712 --log-dir logs_inspect_checkable --max-connections 6`
     - `inspect eval inspect_task_checkable.py --model openrouter/openai/o3 -T model_key=openai/o3 -T sample_ids=17,23 -T resample_tag=completion-fix-20260712 --log-dir logs_inspect_checkable --max-connections 6`
     - Re-running these two commands with the SAME `resample_tag` value IS a free zero-new-call replay (the tag makes the config, and therefore the cache key, deterministic again once set); changing `resample_tag` to a new value forces another real resample.
     - `python3 analyze_checkable.py --gates` afterward regenerates `results_checkable.jsonl` from the logs (dedup keeps the latest-timestamped log per `(model_key, renderer, seed)`), so the completed numbers become the file's content automatically. The pre-completion snapshot is preserved separately at `results_checkable_before_completion_20260712.jsonl` and is not touched by this step.
 
-Outputs: `results_checkable.jsonl` (one line per (model, renderer, trace) with full provenance, now the COMPLETED/headline version), `results_checkable_before_completion_20260712.jsonl` (the ORIGINAL/imputed pre-completion snapshot, kept as a separate artifact), `logs_inspect_checkable/*.eval` (full transcripts incl. reasoning, viewable via `inspect view --log-dir logs_inspect_checkable`; includes the 2026-07-12 completion-run logs), `artifacts/` (audit layer, indexed by `artifacts/README.md`), `plots/*_v2.png`.
+Outputs: `results_checkable.jsonl` (one line per (model, renderer, trace) with full provenance, now the COMPLETED/headline version), `results_checkable_before_completion_20260712.jsonl` (the ORIGINAL/imputed pre-completion snapshot, kept as a separate artifact), `logs_inspect_checkable/*.eval` (full transcripts incl. reasoning, viewable via `inspect view --log-dir logs_inspect_checkable`; includes the 2026-07-12 completion-run logs), `artifacts/` (audit layer, indexed by `artifacts/README.md`), `plots/detection_vs_capability.png`, `plots/specificity_vs_capability.png`, `plots/raw_vs_checkable_detection.png`.
 
 ## Status
 
 ### Naming: how the run-names in this README map to files and flags
 
-The prose above uses plain descriptive run-names. The data files, plot files, and CLI flags keep their original short tags. This table decodes them so nothing is ambiguous.
+The prose above uses plain descriptive run-names. Some data files and the CLI flags still carry their original short phase tags (Phase 0 through 3); the checkable-rendering redesign's code, data, and plot files now use descriptive names instead. This table decodes everything so nothing is ambiguous.
 
 | Name used here | Original short tag | Files and flags it corresponds to |
 |---|---|---|
@@ -407,7 +407,7 @@ The prose above uses plain descriptive run-names. The data files, plot files, an
 | raw-trace run (max effort) | Phase 1b | `results_maxeffort.jsonl`, `logs_inspect/*.eval`; `run_experiment.py --live-max-effort` |
 | unbounded-scaffold pilot | Phase 2 | `results_phase2_pilot*.jsonl`, `prompt_template_phase2.md`; `--phase2` |
 | bounded-scaffold pilot | Phase 2b | `results_phase2b_pilot.jsonl`, `prompt_template_phase2b.md`; `--phase2b` |
-| checkable-rendering redesign | Phase 3 | `results_checkable.jsonl`, `logs_inspect_checkable/*.eval`, `inspect_task_checkable.py`, `prompt_template_checkable.md`, `*_v2.png`, `phase1b_vs_phase3_r4r.png` |
+| checkable-rendering redesign | Phase 3 | `results_checkable.jsonl`, `logs_inspect_checkable/*.eval`, `inspect_task_checkable.py`, `prompt_template_checkable.md`, `detection_vs_capability.png`, `specificity_vs_capability.png`, `raw_vs_checkable_detection.png` |
 | main run | Arm A | the 5-model, N=84, dual-rendering run in the redesign |
 | control run | Arm B | the gpt-5.5, old-binary-rendering attribution control (n=28) |
 

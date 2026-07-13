@@ -1,8 +1,8 @@
 """
-Regenerates plots/tp_r4r_vs_horizon_pareto.png -- METR time horizon vs tamper
+Regenerates plots/raw_detection_vs_horizon_pareto.png -- METR time horizon vs tamper
 detection, with the Pareto frontier (lower horizon + higher detection is
 better) drawn as a trend curve over the raw scatter, so the underlying trend
-is visible despite the non-monotonic raw points (see tp_r4r_vs_horizon.png).
+is visible despite the non-monotonic raw points (see raw_detection_vs_horizon.png).
 
 Data source: README.md "Mapped to capability" table (the root package,
 Phase 1b max-effort results, n=42 per model). Run directly:
@@ -68,7 +68,7 @@ ax.grid(True, axis="y", color="#DDDDDD", linewidth=0.8, zorder=0)
 ax.spines[["top", "right"]].set_visible(False)
 ax.legend(frameon=False, fontsize=9, loc="upper left")
 fig.tight_layout()
-out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tp_r4r_vs_horizon_pareto.png")
+out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raw_detection_vs_horizon_pareto.png")
 fig.savefig(out, dpi=150)
 print("wrote", out)
 print("frontier:", [n for _, _, n in frontier], "| dropped per Ram:", [n for _, _, n in dominated])
