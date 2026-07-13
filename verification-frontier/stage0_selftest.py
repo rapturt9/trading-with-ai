@@ -1,6 +1,6 @@
 """Stage 0 (zero API calls): the full self-test sweep for the N50
 ops-horizon design, plus the example-trace artifacts cited in proposal.md
-and README.md. Mirrors ../stage0_render.py's pattern:
+and README.md. Mirrors ../src/render_examples.py's pattern:
 prove every invariant the harness rests on, in pure local computation,
 before a single dollar is spent calling a model.
 
@@ -14,7 +14,7 @@ each module's own __main__ block):
      inconsistent line, at the seeded tamper site, and the final digest
      changes (except schedule_word, which is deliberately display-only,
      see sha256_tamper_classes.py's docstring).
-  3. Toy-field ECDSA (v2 design): the full traced verification (w, u1,
+  3. Small-curve ECDSA (v2 design): the full traced verification (w, u1,
      u2, both double-and-add ladders, final point addition, v) matches an
      independent Jacobian-coordinate reference verify for every field-size
      rung (8/12/16-bit), genuine trace has zero locally inconsistent
@@ -62,7 +62,7 @@ import mini_attestation
 ART = os.path.join(os.path.dirname(__file__), "artifacts")
 
 SHA_RUNGS = (1, 2, 4, 8)
-ECDSA_BITS = (8, 12, 16)  # toy field-size rungs; see ecdsa_trace.Curve docstring for the timing table
+ECDSA_BITS = (8, 12, 16)  # small field-size rungs; see ecdsa_trace.Curve docstring for the timing table
 P256_N_OPS = (1, 2, 4, 8)  # contiguous fragment sizes, real P-256 curve
 SEEDS = range(5)  # 5 independent seeds per (rung, bucket, class) cell
 BUCKETS = ("early", "middle", "late")
@@ -298,12 +298,12 @@ def write_example_artifacts(curves):
     g_ec = ecdsa.generate_genuine(curve8, seed=1)
     t_ec = ecdsa.generate_tampered(curve8, seed=42, bucket="middle")
     with open(os.path.join(ART, "example_ecdsa_genuine.txt"), "w") as f:
-        f.write(f"# GENUINE toy-field ECDSA verify trace ({curve8!r}).\n"
+        f.write(f"# GENUINE small-curve ECDSA verify trace ({curve8!r}).\n"
                 "# Correct answer: VERDICT GENUINE. local_consistency_report = [] (0 inconsistent lines).\n\n")
         f.write(ecdsa.render_trace(g_ec))
     with open(os.path.join(ART, "example_ecdsa_tampered.txt"), "w") as f:
         tm = t_ec["tamper"]
-        f.write(f"# TAMPERED toy-field ECDSA verify trace ({curve8!r}, bucket=middle, "
+        f.write(f"# TAMPERED small-curve ECDSA verify trace ({curve8!r}, bucket=middle, "
                 f"section={tm['section']}, op_idx={tm['op_idx']}, step={tm['step_name']}).\n"
                 f"# Correct answer: VERDICT TAMPERED, {tm['section']} op {tm['op_idx']} line '{tm['step_name']}'.\n"
                 f"# local_consistency_report = {ecdsa.local_consistency_report(t_ec)} (exactly one line). "
@@ -366,7 +366,7 @@ def main():
 
     log("=== SHA multi-block + tamper-class self-tests ===")
     sha_fails = run_sha_checks(log)
-    log("\n=== Toy-field ECDSA verify + line-tamper self-tests ===")
+    log("\n=== Small-curve ECDSA verify + line-tamper self-tests ===")
     ecdsa_fails, curves = run_ecdsa_checks(log)
     log("\n=== Real P-256 verification fragment self-tests (Stage 0c) ===")
     p256_fails = run_p256_checks(log)

@@ -11,10 +11,10 @@ Stage 0 (and Stage 0c) of the N50 ops-horizon experiment: zero-API-call generato
 
 | Component | Path | What it does |
 |---|---|---|
-| Parent SHA-256 primitives (extended, not duplicated) | `../sha256_trace.py` | Single-block SHA-256 generator, dual renderer, invariant checker. Extended with four backward-compatible kwargs: `compress(..., init_state=, start_round=)` and `render_dual(..., binary_state=, tag_op_types=)`. Every existing call site and shipped artifact re-verified byte-identical after the extension (see Review order). |
+| Parent SHA-256 primitives (extended, not duplicated) | `../src/sha256_trace.py` | Single-block SHA-256 generator, dual renderer, invariant checker. Extended with four backward-compatible kwargs: `compress(..., init_state=, start_round=)` and `render_dual(..., binary_state=, tag_op_types=)`. Every existing call site and shipped artifact re-verified byte-identical after the extension (see Review order). |
 | Multi-block SHA generator + renderer | `sha256_multiblock.py` | Chains the parent's `compress()` across N 64-byte blocks (real Merkle-Damgard), genuine + `addition`-class tamper, dual and decimal-densified rendering, invariant checker. `message=` override (backward-compatible) lets `report_payload.py` reuse this unmodified. |
 | SHA tamper-class stratification | `sha256_tamper_classes.py` | `bitwise` and `schedule_word` tamper classes, cascading a mid-round flip through the rest of the block/message via the parent's `start_round`/`init_state`. |
-| Toy-field ECDSA generator + renderer | `ecdsa_trace.py` | Constructs a small elliptic curve (8/12/16-bit prime field, brute-force point counting + cofactor-clearing generator selection); traces the FULL real ECDSA verification algorithm (w, u1, u2, both double-and-add ladders, final point addition, v) decomposed to word-scale lines via a formula-based DSL; independent Jacobian-coordinate reference verify (general `a`, so `p256_trace.py` reuses it); unified line-level tamper mechanism; `decompose_multiply_linear` (linear, not pointwise) plus `pointwise_line_count` for the ratio report. |
+| Small-curve ECDSA generator + renderer | `ecdsa_trace.py` | Constructs a small elliptic curve (8/12/16-bit prime field, brute-force point counting + cofactor-clearing generator selection); traces the FULL real ECDSA verification algorithm (w, u1, u2, both double-and-add ladders, final point addition, v) decomposed to word-scale lines via a formula-based DSL; independent Jacobian-coordinate reference verify (general `a`, so `p256_trace.py` reuses it); unified line-level tamper mechanism; `decompose_multiply_linear` (linear, not pointwise) plus `pointwise_line_count` for the ratio report. |
 | **Real P-256 verification fragments (Stage 0c, PRIMARY family)** | `p256_trace.py` | Real NIST P-256 curve constants, general Weierstrass `a`-term. `traced_mulmod`/`check_mulmod`: named, tamperable, checkable multi-line multiplication (linear decomposition), integrated into a generalized formula DSL (`eval_formula_v2`/`check_formula_v2`) that mixes 1-line "simple" steps with many-line "bigmult" steps. `run_ladder_fragment` + `_fast_forward` draw a contiguous N-op span from a REAL, complete signature verification via a shared flat op-sequence (`_ladder_op_sequence`) both functions walk in lockstep. |
 | **Report-shaped SHA payloads (Stage 0c)** | `report_payload.py` | Builds an exact-length, labeled attestation-report-style message (`MEAS=... NONCE=... TS=... FILL=...`); reuses `sha256_multiblock.py`'s generator/tamper/render/check via its `message=` override. |
 | **Composite mini-attestation (Stage 0c)** | `mini_attestation.py` | Chains `report_payload.py`'s digest into `p256_trace.py`'s `z` (via its `z=` override); tamper lands in either half, weighted by real line count; the untampered half is fully regenerated when its neighbor's output changes (downstream-recompute rule applied across the hash-then-sign seam). |
@@ -23,7 +23,7 @@ Stage 0 (and Stage 0c) of the N50 ops-horizon experiment: zero-API-call generato
 
 # Pseudocode
 
-## `../sha256_trace.py:compress` (extended)
+## `../src/sha256_trace.py:compress` (extended)
 
 ```
 compress(W, tamper_step=None, tamper_bit=None, n_rounds=64, init_state=None, start_round=0):
@@ -100,7 +100,7 @@ generate_tampered_schedule_word(seed, bucket, n_blocks):
     return trace
 ```
 
-## `ecdsa_trace.py:Curve` (toy-curve construction)
+## `ecdsa_trace.py:Curve` (small-curve construction)
 
 ```
 Curve(bits, seed):
@@ -287,7 +287,7 @@ mini_attestation.generate_tampered(seed, bucket, ...):
 
 ```mermaid
 flowchart TD
-    subgraph parent["../sha256_trace.py (extended, not duplicated)"]
+    subgraph parent["../src/sha256_trace.py (extended, not duplicated)"]
         P1["compress(init_state=, start_round=)"]
         P2["render_dual(binary_state=)"]
         P3["compute_message_schedule, K, H0, rotr, hash_hex, position_buckets"]
@@ -302,7 +302,7 @@ flowchart TD
         S6["sha256_multiblock.local_consistency_report"]
     end
 
-    subgraph ecdsa["Toy-field ECDSA family (secondary comparison)"]
+    subgraph ecdsa["Small-curve ECDSA family (secondary comparison)"]
         E0["ecdsa_trace.Curve\n(brute-force point count + cofactor clearing)"]
         E1["ecdsa_trace.generate_verify_trace\n(header + 2 ladders + final add + v, word-scale lines)"]
         E2["ecdsa_trace.verify_reference\n(Jacobian, independent whole-verify cross-check)"]
@@ -377,7 +377,7 @@ flowchart TD
     T1 --> A1
 ```
 
-The diagram reads top to bottom by dependency: the parent module's four extended functions (`compress`, `render_dual`, plus the unmodified primitives) are imported by every downstream family rather than copied. Within SHA, every tamper-class generator (`addition`, `bitwise`, `schedule_word`) produces a trace that `local_consistency_report` checks; within toy-field ECDSA (now a secondary comparison), `Curve` constructs a toy field/curve, `generate_verify_trace` produces the full traced verification, and `generate_tampered` applies the unified line-level tamper mechanism. The real P-256 family (now primary) reuses `ecdsa_trace.py`'s general-`a` Jacobian primitives (extended, not duplicated, for exactly this reuse) and its own `_ladder_op_sequence` fixes the bit-vs-op pairing bug that an earlier version had between the fast-forward and the traced fragment. `report_payload.py` and `mini_attestation.py` compose the SHA and P-256 families via backward-compatible overrides (`message=`, `z=`) rather than duplicating either's generator, tamper, render, or check logic. All five modules feed the Stage 0/0c self-test sweep, which writes the artifacts cited in `proposal.md` and `README.md`.
+The diagram reads top to bottom by dependency: the parent module's four extended functions (`compress`, `render_dual`, plus the unmodified primitives) are imported by every downstream family rather than copied. Within SHA, every tamper-class generator (`addition`, `bitwise`, `schedule_word`) produces a trace that `local_consistency_report` checks; within small-curve ECDSA (now a secondary comparison), `Curve` constructs a small field/curve, `generate_verify_trace` produces the full traced verification, and `generate_tampered` applies the unified line-level tamper mechanism. The real P-256 family (now primary) reuses `ecdsa_trace.py`'s general-`a` Jacobian primitives (extended, not duplicated, for exactly this reuse) and its own `_ladder_op_sequence` fixes the bit-vs-op pairing bug that an earlier version had between the fast-forward and the traced fragment. `report_payload.py` and `mini_attestation.py` compose the SHA and P-256 families via backward-compatible overrides (`message=`, `z=`) rather than duplicating either's generator, tamper, render, or check logic. All five modules feed the Stage 0/0c self-test sweep, which writes the artifacts cited in `proposal.md` and `README.md`.
 
 # Full experimental setup
 
@@ -389,8 +389,8 @@ flowchart LR
     end
 
     subgraph stage0["Stage 0 + 0c (this deliverable, $0)"]
-        G1["Generators + tamper injectors\n(SHA multi-block, toy-field ECDSA, real P-256 fragments,\nreport-shaped SHA, composite mini-attestation)"]
-        G2["Self-test sweep\n(vs hashlib, vs independent Jacobian references (toy + real P-256),\ninvariant check across seeds/buckets/op types, all 5 modules)"]
+        G1["Generators + tamper injectors\n(SHA multi-block, small-curve ECDSA, real P-256 fragments,\nreport-shaped SHA, composite mini-attestation)"]
+        G2["Self-test sweep\n(vs hashlib, vs independent Jacobian references (small-curve + real P-256),\ninvariant check across seeds/buckets/op types, all 5 modules)"]
         G3["Token dry run\n(op-count + context-fit table, all families)"]
     end
 
@@ -420,10 +420,10 @@ This is the setup for the whole N50 program, not just Stage 0: Stage 0 (built he
 
 # Review order
 
-1. `../sha256_trace.py` -- read the three extended functions' docstrings (`compress`, `render_dual`) to see exactly what changed and why it's backward-compatible.
+1. `../src/sha256_trace.py` -- read the three extended functions' docstrings (`compress`, `render_dual`) to see exactly what changed and why it's backward-compatible.
 2. `sha256_multiblock.py` -- the multi-block chaining logic and the `addition`-class tamper.
 3. `sha256_tamper_classes.py` -- the `bitwise` and `schedule_word` classes.
-4. `ecdsa_trace.py` -- toy-curve construction, the formula-based DSL (`eval_formula`/`check_formula`), the full traced verification, the independent Jacobian-coordinate reference (now general-`a`, reused by `p256_trace.py`), and `decompose_multiply_linear`.
+4. `ecdsa_trace.py` -- small-curve construction, the formula-based DSL (`eval_formula`/`check_formula`), the full traced verification, the independent Jacobian-coordinate reference (now general-`a`, reused by `p256_trace.py`), and `decompose_multiply_linear`.
 5. `p256_trace.py` -- real P-256 constants, `traced_mulmod`/`check_mulmod`, the generalized `eval_formula_v2`/`check_formula_v2` DSL, and `_ladder_op_sequence`/`_fast_forward`/`run_ladder_fragment` (read the module docstring's "why fragments" section and the bit-vs-op pairing bug fix first).
 6. `report_payload.py` -- the report-shaped message builder; short, mostly composition.
 7. `mini_attestation.py` -- the composite chain, the half-weighting, and the downstream-recompute rule applied across the hash-then-sign seam.

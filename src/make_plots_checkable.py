@@ -1,5 +1,5 @@
-"""Phase 3 plots, regenerated from results_checkable.jsonl (Arm A, dual renderer) and
-results_maxeffort.jsonl (Phase 1b baseline). No API calls. Colorblind-safe,
+"""Phase 3 plots, regenerated from results/checkable.jsonl (Arm A, dual renderer) and
+results/raw_maxeffort.jsonl (Phase 1b baseline). No API calls. Colorblind-safe,
 CI error bars, one axis, direct-labeled points (dataviz skill).
 
 Outputs (plots/):
@@ -21,7 +21,10 @@ import matplotlib.pyplot as plt
 
 from run_experiment import ECI_SCORES
 
-PLOTS = os.path.join(os.path.dirname(__file__), "plots")
+_REPO = os.path.join(os.path.dirname(__file__), "..")
+PLOTS = os.path.join(_REPO, "plots")
+RESULTS_CHECKABLE = os.path.join(_REPO, "results", "checkable.jsonl")
+RESULTS_MAXEFFORT = os.path.join(_REPO, "results", "raw_maxeffort.jsonl")
 LABEL = {"openai/gpt-4o": "gpt-4o", "openai/o3": "o3", "openai/gpt-5": "gpt-5",
          "anthropic/claude-opus-4.6": "opus-4.6", "openai/gpt-5.5": "gpt-5.5"}
 ARM_A = list(LABEL)
@@ -45,7 +48,7 @@ def wilson(k, n, z=1.96):
 def load_phase3():
     """Arm A dual per-model: (tp_r4r, n_tampered, tn, n_genuine)."""
     recs = defaultdict(list)
-    for line in open("results_checkable.jsonl"):
+    for line in open(RESULTS_CHECKABLE):
         r = json.loads(line)
         if r["renderer"] == "dual":
             recs[r["model_key"]].append(r)
@@ -61,9 +64,9 @@ def load_phase3():
 
 
 def load_phase1b():
-    """Phase 1b per-model TP_r4r + TN from results_maxeffort.jsonl."""
+    """Phase 1b per-model TP_r4r + TN from results/raw_maxeffort.jsonl."""
     recs = defaultdict(lambda: {"tp": 0, "nt": 0, "tn": 0, "ng": 0})
-    for line in open("results_maxeffort.jsonl"):
+    for line in open(RESULTS_MAXEFFORT):
         r = json.loads(line)
         # results_maxeffort rows: {model, kind, outcome, tier, ...}
         mk = r["model"]

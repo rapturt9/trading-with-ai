@@ -1,7 +1,7 @@
 # Quarantined: pre-verdict-leak-fix ECDSA pilot logs
 
 Moved here 2026-07-12 per the round-2 audit (relayed by the team lead). These
-4 `.eval` files were produced by `ecdsa_trace.py`'s toy-field renderer BEFORE
+4 `.eval` files were produced by `ecdsa_trace.py`'s small-curve renderer BEFORE
 the verdict-leak fix (the renderer used to print `Final comparison ...
 v == r ? {trace['valid']}` as its last line, a direct True/False readout of
 the genuine/tampered verdict). All 4 still contain that leaked string and

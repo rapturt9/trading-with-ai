@@ -34,29 +34,15 @@ import tiktoken
 from sha256_trace import generate_genuine, generate_tampered, render_trace, position_buckets
 from score import parse_response, score
 
-CACHE_DIR = os.path.join(os.path.dirname(__file__), "cache")
-PROMPT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "prompt_template.md")
-# Phase 2 (2026-07-11): the verification-scaffold variant. SAME 84 traces, same
-# binary rendering, same right-for-right-reason scoring -- only the prompt
-# changes (freeform "does this look right" -> explicit written-out carry-chain
-# addition at every compression add step). A distinct template file means the
-# scaffold prompt text differs, so its cache keys never collide with Phase 1/1b
-# even before the distinct tag is applied.
-PHASE2_PROMPT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "prompt_template_phase2.md")
-# Phase 2b (2026-07-11): the BOUNDED verification scaffold. Two-pass prompt
-# (triage <=5 rounds, then carry-chain only those) + a capped output budget so
-# claude-opus-4.6 can't drown in busywork like it did in Phase 2 (all 64 rounds
-# forced -> 128k output cap hit -> UNPARSEABLE). Same 84 traces, same binary
-# base, same r4r scoring; only the prompt and the output cap change vs Phase 1b.
-PHASE2B_PROMPT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "prompt_template_phase2b.md")
-# Capped output budget for Phase 2b, well under the 128k that pinned opus. A
-# module default; the actual value used is a parameter (--phase2b-max-tokens),
-# not hardcoded into the call path.
-PHASE2B_MAX_TOKENS = 32000
-# Phase 3 (2026-07-11): maximally-observable redesign (see redesign-proposal.md).
+# Code lives in src/; data/, prompts/, and results/ are siblings one level up.
+_REPO = os.path.join(os.path.dirname(__file__), "..")
+CACHE_DIR = os.path.join(_REPO, "data", "cache")
+RESULTS_DIR = os.path.join(_REPO, "results")
+PROMPT_TEMPLATE_PATH = os.path.join(_REPO, "prompts", "raw_trace.md")
+# Phase 3 (2026-07-11): the checkable-rendering redesign.
 # Dual binary+decimal rendering (render_dual), short 5-rule prompt, bounded JSON
 # output. Run via inspect_task_checkable.py (Inspect, native caching).
-PROMPT_TEMPLATE_CHECKABLE_PATH = os.path.join(os.path.dirname(__file__), "prompt_template_checkable.md")
+PROMPT_TEMPLATE_CHECKABLE_PATH = os.path.join(_REPO, "prompts", "checkable.md")
 
 # Epoch Capability Index, pulled from epoch.ai/data/eci_scores.csv (see plan.md
 # 2026-07-08 entry). Single source of truth for the capability axis; provenance
@@ -328,9 +314,9 @@ def call_model(model, prompt, api_key, reasoning_params, max_attempts=6, max_tok
     body = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
-        # max_tokens_override caps the completion budget (Phase 2b: ~32k, well
-        # under each model's real ceiling) to force prioritization and prevent
-        # budget-exhaustion UNPARSEABLE; default is the model's real max.
+        # max_tokens_override caps the completion budget below each model's real
+        # ceiling to force prioritization and prevent budget-exhaustion
+        # UNPARSEABLE; default is the model's real max.
         "max_tokens": max_tokens_override if max_tokens_override else COMPLETION_MAX_TOKENS[model],
     }
     if reasoning_params:
@@ -399,10 +385,9 @@ def _call_one(idx, item, model, mode, tag, base, decompose_add, api_key, reasoni
     """One cache-or-call unit of work, safe to run concurrently (each idx
     writes to a distinct cache file, no shared mutable state).
 
-    prompt_template_path defaults to None (the Phase 1/1b prompt), so every
-    existing call site is byte-identical -- passing the Phase 2 scaffold
-    template is the only thing that changes the prompt (and therefore the
-    cache key)."""
+    prompt_template_path defaults to None (the Phase 1/1b prompt); passing an
+    alternate template is the only thing that changes the prompt (and therefore
+    the cache key), keeping every existing call site byte-identical."""
     trace_text = render_trace(item["trace"], base=base, decompose_add=decompose_add)
     prompt = build_prompt(trace_text, template_path=prompt_template_path)
     key = cache_key(model, prompt, idx, tag=tag)
@@ -572,7 +557,7 @@ def run_variant(mode, models, reasoning_params_by_model, tag_prefix, results_fil
 
     # A "pilot" mode run must never overwrite the authoritative "live" results
     # file (this happened for real: an opus-4.8 pilot silently clobbered
-    # results_maxeffort.jsonl's 420-row live result down to 56 rows; recovered
+    # raw_maxeffort.jsonl's 420-row live result down to 56 rows; recovered
     # via --assert-cached-max-effort, since the underlying cache was untouched,
     # but the file-naming bug that allowed it is fixed here, not just patched
     # around). "live" and "assert-cached" both write to the canonical name
@@ -581,7 +566,8 @@ def run_variant(mode, models, reasoning_params_by_model, tag_prefix, results_fil
     if mode == "pilot":
         base_name, ext = os.path.splitext(results_filename)
         results_filename = f"{base_name}_pilot{ext}"
-    results_path = os.path.join(os.path.dirname(__file__), results_filename)
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+    results_path = os.path.join(RESULTS_DIR, results_filename)
     with open(results_path, "w") as f:
         for r in all_results:
             f.write(json.dumps(r) + "\n")
@@ -591,9 +577,9 @@ def run_variant(mode, models, reasoning_params_by_model, tag_prefix, results_fil
 def run_main(mode, n_pilot=10, base="hex", n_rounds=64):
     """Phase 1: the original 4 models, medium reasoning effort. Unchanged
     behavior/cache tag from the completed live run (tag 'main-...',
-    results.jsonl) -- a rerun still reproduces the exact Phase 1 result with
+    results/raw.jsonl) -- a rerun still reproduces the exact Phase 1 result with
     zero new API calls."""
-    run_variant(mode, MODELS, REASONING_PARAMS, "main", "results.jsonl",
+    run_variant(mode, MODELS, REASONING_PARAMS, "main", "raw.jsonl",
                 n_pilot=n_pilot, base=base, n_rounds=n_rounds)
 
 
@@ -609,86 +595,7 @@ def run_max_effort(mode, n_pilot=10, base="binary", n_rounds=64, models=None):
     if models is None:
         models = ALL_MODELS
     run_variant(mode, models, MAX_EFFORT_REASONING_PARAMS, "maxeffort",
-                "results_maxeffort.jsonl", n_pilot=n_pilot, base=base, n_rounds=n_rounds)
-
-
-# Phase 2 (verification scaffold). Full run targets ONLY the two models that
-# showed nonzero right-for-right-reason detection in Phase 1b: claude-opus-4.6
-# (8/42) and gpt-5.5 (5/42). The other Phase 1b models were 0/42, so there is
-# no detection for a scaffold to improve on -- spending on them would only
-# re-measure zero. Same effort settings as Phase 1b (MAX_EFFORT_REASONING_PARAMS)
-# and same binary base, so the ONLY variable vs Phase 1b is the scaffold prompt.
-PHASE2_MODELS = {
-    "horizon_719min": "anthropic/claude-opus-4.6",
-    "eci_159_gpt55": "openai/gpt-5.5",
-}
-# The pilot uses ONE model to save money (opus-4.6 alone runs ~$3/call). Default
-# to gpt-5.5: it is the cheaper of the two nonzero detectors (~$1.5/call vs ~$3),
-# so more pilot calls fit under a tight budget, and unlike opus-4.6 (already
-# saturating its ~107k/128k output cap in Phase 1b, so its cost is already
-# characterized and near-fixed) gpt-5.5 has output headroom the longer scaffold
-# will actually use -- so a real phase-2 gpt-5.5 cost point is the higher-value
-# measurement. Override with --phase2-pilot-model.
-PHASE2_PILOT_MODELS = {"eci_159_gpt55": "openai/gpt-5.5"}
-
-# A mixed genuine+tampered pilot slice (dataset indices), so the pilot yields a
-# real detection signal, not just false-positive behavior on all-genuine traces.
-# build_dataset order: 0-41 genuine, 42-55 tampered-early, 56-69 tampered-middle,
-# 70-83 tampered-late. This picks 2 genuine + one from each tamper bucket, then
-# more genuine/tampered, so any prefix of length N stays balanced.
-PHASE2_PILOT_INDICES = [0, 42, 56, 70, 1, 43, 57, 71, 2, 58]
-
-
-def run_phase2(mode, n_pilot=8, base="binary", n_rounds=64, models=None,
-               pilot_model_key=None):
-    """Phase 2: the verification-scaffold variant. Same 84 traces, same binary
-    rendering, same max-effort settings, same r4r scoring as Phase 1b -- the
-    ONLY change is the scaffold prompt (prompt_template_phase2.md). Separate
-    cache tag ('phase2-...') and results file (results_phase2.jsonl) so it never
-    collides with Phase 1 (results.jsonl) or Phase 1b (results_maxeffort.jsonl)."""
-    if models is None:
-        if mode == "pilot":
-            models = PHASE2_PILOT_MODELS
-            if pilot_model_key:
-                models = {pilot_model_key: PHASE2_MODELS[pilot_model_key]}
-        else:
-            models = PHASE2_MODELS
-    pilot_indices = PHASE2_PILOT_INDICES[:n_pilot] if mode == "pilot" else None
-    run_variant(mode, models, MAX_EFFORT_REASONING_PARAMS, "phase2",
-                "results_phase2.jsonl", n_pilot=n_pilot, base=base, n_rounds=n_rounds,
-                prompt_template_path=PHASE2_PROMPT_TEMPLATE_PATH,
-                pilot_indices=pilot_indices)
-
-
-# Phase 2b (bounded scaffold). Same two target models as Phase 2. Pilot uses a
-# mixed genuine+tampered slice across both models (the coordinator wants both
-# piloted, unlike Phase 2's single-model cost probe).
-PHASE2B_MODELS = {
-    "horizon_719min": "anthropic/claude-opus-4.6",
-    "eci_159_gpt55": "openai/gpt-5.5",
-}
-# 6 mixed indices: 1 genuine + tampered early/early/middle/middle/late, so the
-# pilot exercises false-positive behavior AND detection across all 3 buckets.
-# (build_dataset order: 0-41 genuine, 42-55 early, 56-69 middle, 70-83 late.)
-PHASE2B_PILOT_INDICES = [0, 42, 43, 56, 57, 70]
-
-
-def run_phase2b(mode, n_pilot=6, base="binary", n_rounds=64, models=None,
-                max_tokens=None):
-    """Phase 2b: the BOUNDED verification-scaffold variant. Same 84 traces, same
-    binary base, same max-effort reasoning as Phase 1b/2, but a two-pass prompt
-    (triage <=5 rounds, carry-chain only those) and a CAPPED output budget
-    (max_tokens, default PHASE2B_MAX_TOKENS ~32k) so opus can't drown. Distinct
-    cache tag ('phase2b-...') and results file ('results_phase2b.jsonl')."""
-    if models is None:
-        models = PHASE2B_MODELS
-    if max_tokens is None:
-        max_tokens = PHASE2B_MAX_TOKENS
-    pilot_indices = PHASE2B_PILOT_INDICES[:n_pilot] if mode == "pilot" else None
-    run_variant(mode, models, MAX_EFFORT_REASONING_PARAMS, "phase2b",
-                "results_phase2b.jsonl", n_pilot=n_pilot, base=base, n_rounds=n_rounds,
-                prompt_template_path=PHASE2B_PROMPT_TEMPLATE_PATH,
-                pilot_indices=pilot_indices, max_tokens_override=max_tokens)
+                "raw_maxeffort.jsonl", n_pilot=n_pilot, base=base, n_rounds=n_rounds)
 
 
 if __name__ == "__main__":
@@ -707,54 +614,9 @@ if __name__ == "__main__":
                               "file from the medium-effort Phase 1 run.")
     parser.add_argument("--live-max-effort", action="store_true")
     parser.add_argument("--assert-cached-max-effort", action="store_true")
-    parser.add_argument("--phase2", action="store_true",
-                         help="Verification-scaffold variant. Composes with --pilot N / "
-                              "--live / --assert-cached: e.g. `--phase2 --pilot 6`, "
-                              "`--phase2 --live`, `--phase2 --assert-cached`. Same 84 traces, "
-                              "same binary base, same max-effort settings as the max-effort "
-                              "run; only the prompt changes (prompt_template_phase2.md).")
-    parser.add_argument("--phase2-pilot-model", default=None,
-                         help="For --phase2 --pilot, which single model to pilot "
-                              "(model key, e.g. 'horizon_719min' for opus-4.6 or "
-                              "'eci_159_gpt55' for gpt-5.5). Default: gpt-5.5 (cheaper).")
-    parser.add_argument("--phase2b", action="store_true",
-                         help="BOUNDED verification-scaffold variant (two-pass, capped "
-                              "output). Composes with --pilot N / --live / --assert-cached, "
-                              "same as --phase2. Targets opus-4.6 + gpt-5.5.")
-    parser.add_argument("--phase2b-max-tokens", type=int, default=None,
-                         help="Output-token cap for --phase2b calls (default "
-                              f"{PHASE2B_MAX_TOKENS}). Part of the affordance, not the cache "
-                              "key -- keep it fixed across a pilot and its matching live run.")
     args = parser.parse_args()
 
-    if args.phase2b:
-        # --phase2b modifier: action from --pilot / --live / --assert-cached.
-        base = args.base if args.base != "hex" else "binary"  # phase 2b baseline is binary
-        mt = args.phase2b_max_tokens  # None -> run_phase2b uses PHASE2B_MAX_TOKENS
-        if args.assert_cached:
-            run_phase2b("assert-cached", base=base, max_tokens=mt)
-        elif args.live:
-            run_phase2b("live", base=base, max_tokens=mt)
-        elif args.pilot:
-            run_phase2b("pilot", n_pilot=args.pilot, base=base, max_tokens=mt)
-        else:
-            print("--phase2b needs one of --pilot N, --live, or --assert-cached.", file=sys.stderr)
-            sys.exit(2)
-    elif args.phase2:
-        # --phase2 is a modifier: the action comes from --pilot / --live /
-        # --assert-cached, routed to the scaffold variant instead of Phase 1.
-        base = args.base if args.base != "hex" else "binary"  # phase 2 baseline is binary
-        if args.assert_cached:
-            run_phase2("assert-cached", base=base)
-        elif args.live:
-            run_phase2("live", base=base)
-        elif args.pilot:
-            run_phase2("pilot", n_pilot=args.pilot, base=base,
-                       pilot_model_key=args.phase2_pilot_model)
-        else:
-            print("--phase2 needs one of --pilot N, --live, or --assert-cached.", file=sys.stderr)
-            sys.exit(2)
-    elif args.dry_run:
+    if args.dry_run:
         dry_run()
     elif args.ablate_format:
         ablate_format(args.ablate_format, mode="assert-cached" if args.assert_cached else "ablate-format")

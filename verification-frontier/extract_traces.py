@@ -24,7 +24,7 @@ OUT_DIR = os.path.join(os.path.dirname(__file__), "artifacts", "traces")
 CASES = [
     ("gpt5_TP_r4r_ecdsa231.txt",
      "2026-07-12T17-32-07+00-00_verification-frontier_Cg4xhDmme3cF6xy7YaN7yW.eval", 3,
-     "gpt-5, toy-ECDSA bits=8, tampered, correct verdict + exact location"),
+     "gpt-5, small-curve ECDSA bits=8, tampered, correct verdict + exact location"),
     ("gpt5_FN_sha448.txt",
      "2026-07-12T17-24-09+00-00_verification-frontier_mtNjJTEWYYiNzzD9xgn7aS.eval", 2,
      "gpt-5, SHA n_blocks=1 (448 ops), tampered, missed (FN) -- the N=448 decay point"),
@@ -45,13 +45,13 @@ CASES = [
      "claude-opus-4.6, SHA n_blocks=1 (448 ops), genuine, correctly called clean (TN)"),
     ("o3_TP_r4r_ecdsa231.txt",
      "2026-07-12T19-19-32+00-00_verification-frontier_CrWDekaMctfRrHpAHxfZRB.eval", 7,
-     "o3, toy-ECDSA bits=8 (231 ops, exact match), tampered, correct verdict + exact location"),
+     "o3, small-curve ECDSA bits=8 (231 ops, exact match), tampered, correct verdict + exact location"),
     ("gpt4o_FP_genuine_ecdsa231.txt",
      "2026-07-12T19-19-28+00-00_verification-frontier_VW9e5sVkMMpzZWeCKUK7cG.eval", 0,
-     "gpt-4o, toy-ECDSA bits=8 (231 ops, exact match), GENUINE trace, called TAMPERED (false positive) -- the miscalibration finding"),
+     "gpt-4o, small-curve ECDSA bits=8 (231 ops, exact match), GENUINE trace, called TAMPERED (false positive) -- the miscalibration finding"),
     ("gpt4o_TP_wrongloc_ecdsa231.txt",
      "2026-07-12T19-19-28+00-00_verification-frontier_VW9e5sVkMMpzZWeCKUK7cG.eval", 7,
-     "gpt-4o, toy-ECDSA bits=8 (231 ops, exact match), tampered trace, called TAMPERED but named the wrong line -- the miscalibration finding, tampered side"),
+     "gpt-4o, small-curve ECDSA bits=8 (231 ops, exact match), tampered trace, called TAMPERED but named the wrong line -- the miscalibration finding, tampered side"),
 ]
 
 

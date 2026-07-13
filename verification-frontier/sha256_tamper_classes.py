@@ -36,7 +36,7 @@ import os
 import random
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from sha256_trace import K, MASK32  # noqa: E402
 
 from sha256_multiblock import (  # noqa: E402

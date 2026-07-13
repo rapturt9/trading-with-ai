@@ -1,7 +1,7 @@
 # N50 harness prompt: real P-256 verification-fragment family (PRIMARY)
 
 `{trace}` is substituted with `p256_trace.render_fragment(...)` output. Location
-is 2-part -- (op_idx, step) -- not 3-part like the toy-ECDSA family, since a
+is 2-part -- (op_idx, step) -- not 3-part like the small-curve ECDSA family, since a
 fragment has no "section" (header/ladder1/ladder2/final_add/v): it's a single
 contiguous span drawn from one ladder of a genuine, complete P-256 signature
 verify, matching `local_consistency_report`'s own (op_idx, step_name) tuple

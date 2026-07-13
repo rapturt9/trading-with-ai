@@ -19,7 +19,7 @@ for m in "${MODELS[@]}"; do
   inspect eval inspect_task.py \
     --model "openrouter/$m" \
     -T "model_key=$m" \
-    --log-dir logs_inspect \
+    --log-dir ../data/logs_raw \
     --max-connections 16 \
     --max-retries 6 \
     --display plain \

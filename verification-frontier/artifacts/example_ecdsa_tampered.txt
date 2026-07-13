@@ -1,4 +1,4 @@
-# TAMPERED toy-field ECDSA verify trace (Curve(bits=8, p=223, b=5, n=229, h=1), bucket=middle, section=ladder2, op_idx=2, step=y3).
+# TAMPERED small-curve ECDSA verify trace (Curve(bits=8, p=223, b=5, n=229, h=1), bucket=middle, section=ladder2, op_idx=2, step=y3).
 # Correct answer: VERDICT TAMPERED, ladder2 op 2 line 'y3'.
 # local_consistency_report = [('ladder2', 2, 'y3')] (exactly one line). Final v==r comparison: False (expected False; not itself a tamper-target line).
 

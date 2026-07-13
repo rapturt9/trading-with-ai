@@ -1,2 +1,0 @@
-{"model": "anthropic/claude-opus-4.6", "kind": "tampered", "bucket": "early", "outcome": "UNPARSEABLE", "tier": "horizon_719min"}
-{"model": "anthropic/claude-opus-4.6", "kind": "tampered", "bucket": "middle", "outcome": "FN", "tier": "horizon_719min"}

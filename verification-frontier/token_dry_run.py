@@ -37,7 +37,7 @@ CONTEXT_WINDOWS = {
 }
 
 SHA_RUNGS = (1, 2, 4, 8, 16, 32)
-ECDSA_BITS = (8, 12, 16)  # toy field-size rungs, see ecdsa_trace.Curve
+ECDSA_BITS = (8, 12, 16)  # small field-size rungs, see ecdsa_trace.Curve
 P256_N_OPS = (1, 2, 4, 8)  # real-curve contiguous fragment sizes, see p256_trace.py
 
 
@@ -75,7 +75,7 @@ def main():
         print(f"  n_blocks={n_blocks:3d} ({n_blocks * 448:5d} ops): {n:7d} tokens, "
               f"fits: {', '.join(m.split('/')[-1] for m in fitting) or 'NONE'}")
 
-    print("\n=== Toy-field ECDSA verify, decimal rendering ===")
+    print("\n=== Small-curve ECDSA verify, decimal rendering ===")
     for bits in ECDSA_BITS:
         curve = ecdsa.Curve(bits, seed=1)
         g = ecdsa.generate_genuine(curve, seed=1)

@@ -1,5 +1,5 @@
-"""Phase 3 analysis / export: read the Inspect .eval logs in logs_inspect_checkable/,
-stream every sample's stored score metadata to results_checkable.jsonl (one line per
+"""Phase 3 analysis / export: read the Inspect .eval logs in data/logs_checkable/,
+stream every sample's stored score metadata to results/checkable.jsonl (one line per
 (model, renderer, trace), full provenance), and compute the metric suite +
 pilot gates per (model, renderer).
 
@@ -25,8 +25,9 @@ from collections import defaultdict
 from score_checkable import auroc, bootstrap_auroc_ci, tpr_at_fpr, brier
 from run_experiment import call_cost, PRICES_DATE
 
-LOG_DIR = "logs_inspect_checkable"
-RESULTS = "results_checkable.jsonl"
+_REPO = os.path.join(os.path.dirname(__file__), "..")
+LOG_DIR = os.path.join(_REPO, "data", "logs_checkable")
+RESULTS = os.path.join(_REPO, "results", "checkable.jsonl")
 SCORER = "r4r_v2_scorer"
 
 
@@ -196,7 +197,7 @@ def print_suite(key, s):
 
 
 def gates(g):
-    """Pilot hard-gate verdicts (redesign-proposal.md 'Cheap-first pilot plan')."""
+    """Pilot hard-gate verdicts."""
     print("\n--- PILOT GATES ---")
     for (mk, rend), recs in sorted(g.items()):
         if rend != "dual":

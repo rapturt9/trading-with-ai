@@ -1,7 +1,7 @@
 """Multi-block SHA-256 trace generator: the length-scaling axis of the N50
 ops-horizon design (verification-frontier proposal.md, workstream B).
 
-Imports and extends ../sha256_trace.py rather than
+Imports and extends ../src/sha256_trace.py rather than
 duplicating it: reuses K, H0, MASK32, rotr, compute_message_schedule,
 compress (now accepting an init_state kwarg, see that file), render_dual
 (now accepting a binary_state kwarg), position_buckets, hash_hex, and the
@@ -26,7 +26,7 @@ import os
 import random
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from sha256_trace import (  # noqa: E402
     K, H0, MASK32, rotr, compute_message_schedule, compress, render_dual,
     position_buckets, hash_hex, _fmt_word, _fmt_dec, _Liner,

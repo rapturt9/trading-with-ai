@@ -1,5 +1,5 @@
 """Recomputes the project's standard TN/TP_r4r/TP_wrong_round/FP/FN/UNPARSEABLE
-outcome table from the Inspect .eval logs in logs_inspect/, using the
+outcome table from the Inspect .eval logs in data/logs_raw/, using the
 `outcome` field r4r_scorer() already stores in each sample's score metadata
 (inspect_task.py) -- no re-scoring logic duplicated here.
 
@@ -18,12 +18,13 @@ Run: python3 summarize_inspect_logs.py
 
 import glob
 import json
+import os
 import zipfile
 from collections import Counter
 
 from inspect_ai.log import read_eval_log
 
-LOG_DIR = "logs_inspect"
+LOG_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "logs_raw")
 
 MODEL_KEY_TO_LABEL = {
     "openai/gpt-4o": "gpt-4o",
@@ -79,7 +80,7 @@ def main():
           f"{'TP_r4r':>7} {'TP_wrong':>9} {'FN':>4} {'t-UNPARSE':>10}")
     for model_key, label in MODEL_KEY_TO_LABEL.items():
         if model_key not in results:
-            print(f"{label:<20} NOT YET IN logs_inspect/")
+            print(f"{label:<20} NOT YET IN data/logs_raw/")
             continue
         g, t = results[model_key]["genuine"], results[model_key]["tampered"]
         print(f"{label:<20} {g.get('TN', 0):>4} {g.get('FP', 0):>4} {g.get('UNPARSEABLE', 0):>10}   "

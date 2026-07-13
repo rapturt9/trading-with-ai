@@ -1,12 +1,12 @@
-"""N50 ops-horizon Inspect (inspect_ai) task: SHA multi-block and toy-field
+"""N50 ops-horizon Inspect (inspect_ai) task: SHA multi-block and small-curve
 ECDSA tamper-verification, parameterized so family/rung/n/seed/model are all
-`-T` task parameters, following ../inspect_task_checkable.py's
+`-T` task parameters, following ../src/inspect_task_checkable.py's
 pattern (Inspect Task, MemoryDataset, native caching, a scorer that stores
 full provenance in Score.metadata so every headline number is recomputable
 offline from the .eval log with zero new API calls).
 
 Reasoning-effort/max-tokens defaults and ECI values are IMPORTED from
-../run_experiment.py (MAX_EFFORT_REASONING_PARAMS,
+../src/run_experiment.py (MAX_EFFORT_REASONING_PARAMS,
 COMPLETION_MAX_TOKENS, ECI_SCORES), not copied -- this experiment reuses the
 same five live-run models and the same empirically-confirmed per-provider
 "real max effort" values that file already established.
@@ -24,7 +24,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from inspect_ai import Task, task
 from inspect_ai.dataset import Sample, MemoryDataset
@@ -173,7 +173,7 @@ def _make_sha_sample(idx, item, rendering, payload="random"):
 
 
 # --------------------------------------------------------------------------
-# Toy-field ECDSA dataset
+# Small-curve ECDSA dataset
 # --------------------------------------------------------------------------
 
 def _ecdsa_loc_type(trace, loc):
@@ -373,7 +373,7 @@ def verification_frontier(family: str, model_key: str, rung: int, n: int = 20,
                            prompt_variant: str = "base", op_type_filter: str = None,
                            curve_seed: int = 1, payload: str = "random", limb_bits: int = 8,
                            reasoning_effort: str = None, max_tokens: int = None):
-    """family: 'sha', 'ecdsa' (toy-field), or 'p256' (real, PRIMARY). rung:
+    """family: 'sha', 'ecdsa' (small-curve), or 'p256' (real, PRIMARY). rung:
     n_blocks (sha), field bits (ecdsa), or n_ops (p256, contiguous fragment
     length: 1/2/4/8). n: total samples (roughly half genuine, half
     tampered). rendering: 'dual'|'decimal_densified' (sha only, default
@@ -409,7 +409,7 @@ def verification_frontier(family: str, model_key: str, rung: int, n: int = 20,
             # config.reasoning_effort = "max" directly bypasses pydantic's
             # validate-on-construction (no validate-on-assignment) and the
             # actual HTTP call goes through fine -- confirmed by the OLD
-            # opus-4.6 runs in ../logs_inspect_checkable/, which used
+            # opus-4.6 runs in ../data/logs_checkable/, which used
             # exactly that pattern and produced real usage data -- but
             # `read_eval_log()` on the CURRENT inspect_ai version then rejects
             # the resulting log ("Input should be 'none'...'xhigh'"), which

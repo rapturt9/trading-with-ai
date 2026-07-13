@@ -1,4 +1,4 @@
-"""Toy-field ECDSA verification tracer -- v2 design (Ram's 2026-07-12
+"""Small-curve ECDSA verification tracer -- v2 design (Ram's 2026-07-12
 correction to the original 256-bit-field-with-shortened-scalars plan).
 
 **What changed and why (design provenance, per Ram):** the v1 design kept
@@ -22,7 +22,7 @@ line in every trace this module renders:**
   constants are not counted. Big operations never count as one op: a
   multiplication decomposes into a raw-product line (type
   "multiplication") and a separate reduction line (type "reduction") --
-  this is what keeps toy-field measurements and real 256-bit
+  this is what keeps small-curve measurements and real 256-bit
   extrapolations in the same unit (a real 256-bit multiply is ~16
   word-scale lines at 32-bit words -- 8 multiplication rows + 8 running-sum
   additions, LINEAR in word count, not the ~64-line pointwise n^2 count an
@@ -219,7 +219,7 @@ def point_on_curve(P, p, b):
 
 
 class Curve:
-    """A toy curve, fully constructed and self-describing. p, b: the field
+    """A small curve, fully constructed and self-describing. p, b: the field
     prime and curve constant (a=0 always). N: full group order (brute-force
     counted). n: the prime subgroup order used for ECDSA. h: cofactor
     (N == h*n). G: a generator of order exactly n."""
@@ -362,7 +362,7 @@ def check_formula(formula, seed_vals, records):
     return bad
 
 
-class ToyFieldCollision(Exception):
+class SmallFieldCollision(Exception):
     """Raised when a traced ADD would need to add a point to itself or to
     its negation (x1 == x2) -- the toy-scale addition formula (built for
     two DISTINCT points, matching what a real trace renders) doesn't cover
@@ -377,12 +377,12 @@ def run_point_op(kind, p, x1, y1, x2=None, y2=None, tamper_name=None, tamper_bit
     seed = {"x1": x1, "y1": y1}
     if kind == "add":
         if x1 == x2:
-            raise ToyFieldCollision(f"x1 == x2 == {x1}, addition formula needs distinct points")
+            raise SmallFieldCollision(f"x1 == x2 == {x1}, addition formula needs distinct points")
         seed.update({"x2": x2, "y2": y2})
         formula = add_formula(p)
     else:
         if y1 == 0:
-            raise ToyFieldCollision("y1 == 0, a 2-torsion point -- doubling formula divides by 2*y1")
+            raise SmallFieldCollision("y1 == 0, a 2-torsion point -- doubling formula divides by 2*y1")
         formula = double_formula(p)
     vals, records = eval_formula(formula, seed, tamper_name, tamper_bit)
     return {"kind": kind, "seed": seed, "formula": formula, "records": records,
@@ -593,8 +593,8 @@ def generate_genuine(curve, seed):
             continue  # u1 or u2 landed on 0, resample (see module docstring)
         try:
             trace = generate_verify_trace(curve, Q, r, s, z)
-        except ToyFieldCollision:
-            continue  # see ToyFieldCollision's docstring
+        except SmallFieldCollision:
+            continue  # see SmallFieldCollision's docstring
         break
     ref_valid, ref_v = verify_reference(curve, Q, r, s, z)
     assert trace["valid"] is True, "genuine signature failed the traced verify"
@@ -653,8 +653,8 @@ def generate_tampered(curve, seed, bucket):
             continue
         try:
             genuine = generate_verify_trace(curve, Q, r, s, z)
-        except ToyFieldCollision:
-            continue  # see ToyFieldCollision's docstring
+        except SmallFieldCollision:
+            continue  # see SmallFieldCollision's docstring
 
         targets = _flat_targets(genuine)
         buckets = position_buckets(len(targets))
@@ -664,7 +664,7 @@ def generate_tampered(curve, seed, bucket):
         tamper = {"section": section, "op_idx": op_idx, "step_name": step_name, "bit": bit}
         try:
             tampered = generate_verify_trace(curve, Q, r, s, z, tamper=tamper)
-        except ToyFieldCollision:
+        except SmallFieldCollision:
             continue  # the TAMPER itself induced a collision downstream; resample
         break
 
@@ -680,7 +680,7 @@ def generate_tampered(curve, seed, bucket):
 
 
 # --- multiplication decomposition, LINEAR not pointwise (used for the
-# real-256-bit-scale bridge figure in proposal.md, not part of the toy-curve
+# real-256-bit-scale bridge figure in proposal.md, not part of the small-curve
 # traces above, whose field sizes are already small enough not to need
 # decomposition at all). Design rule locked by Ram, 2026-07-12: decompose a
 # big multiplication into ~n lines for an n-word operand, NOT n^2 --

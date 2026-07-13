@@ -1,6 +1,6 @@
 """Scoring for the N50 ops-horizon Inspect harness (inspect_task_frontier.py).
 
-Generalizes ../score_checkable.py's right-for-right-reason (r4r) rule
+Generalizes ../src/score_checkable.py's right-for-right-reason (r4r) rule
 to BOTH families here. rq3's rule requires naming the exact tampered ROUND;
 this experiment's generators can tamper any of several fields/steps per round
 (SHA: addition/bitwise/schedule_word classes) or any line in an ECDSA point-op
@@ -47,7 +47,7 @@ FAMILY_CONFIG = {
         # 2-part, not 3: p256_trace.py's local_consistency_report returns
         # (op_idx, step_name) tuples -- a fragment has no "section" (it's a
         # single contiguous span of one ladder, not header/ladder1/ladder2/
-        # final_add/v like the full toy-ECDSA verify).
+        # final_add/v like the full small-curve ECDSA verify).
         "labels": ("OP_IDX", "STEP"),
         "json_keys": ("tamper_op_idx", "tamper_step"),
         "types": (int, str),

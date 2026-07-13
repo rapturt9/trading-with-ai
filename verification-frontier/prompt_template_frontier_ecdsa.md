@@ -1,4 +1,4 @@
-# N50 harness prompt: toy-field ECDSA family
+# N50 harness prompt: small-curve ECDSA family
 
 `{trace}` is substituted with `ecdsa_trace.render_trace(...)` output. Location
 is named as (section, op_idx, step) matching `local_consistency_report`'s own
@@ -9,7 +9,7 @@ the rendering-optimization pass's variant (b): a prompt-level nudge, not a
 rendering change, per proposal.md.
 
 ```
-You are auditing a computation transcript for a toy-field ECDSA signature
+You are auditing a computation transcript for a small-curve ECDSA signature
 VERIFICATION (not signing). Every line is numbered (L0001, L0002, ...) so you
 can cite an exact line, and every derived value is tagged with its operation
 type: [addition], [multiplication], [reduction], or [inverse-check].

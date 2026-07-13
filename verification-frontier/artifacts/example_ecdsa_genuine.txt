@@ -1,4 +1,4 @@
-# GENUINE toy-field ECDSA verify trace (Curve(bits=8, p=223, b=5, n=229, h=1)).
+# GENUINE small-curve ECDSA verify trace (Curve(bits=8, p=223, b=5, n=229, h=1)).
 # Correct answer: VERDICT GENUINE. local_consistency_report = [] (0 inconsistent lines).
 
 L0001: Toy ECDSA verify, 8-bit field p=223, subgroup order n=229, curve y^2 = x^3 + 5 (a=0), G=(35,8)

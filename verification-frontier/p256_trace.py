@@ -2,7 +2,7 @@
 0c, the PRIMARY family per Ram's 2026-07-12 correction ("similar to what
 is done for TEE"): real curve constants, real 256-bit coordinates, the
 general Weierstrass a-term reinstated (P-256's a = p-3, NOT the a=0
-shortcut the toy-field family uses), and every multiplication decomposed
+shortcut the small-curve family uses), and every multiplication decomposed
 LINEARLY (see ecdsa_trace.py's decompose_multiply_linear / the
 "decomposition rule: linear, not pointwise" plan.md entry) via this
 module's traced_mulmod, so a real 256-bit multiply renders as ~n_limbs
@@ -44,7 +44,7 @@ from ecdsa_trace import (  # noqa: E402  (reused, not duplicated -- see module d
 
 # --- NIST P-256 / secp256r1 standard published constants ---
 P = 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
-A = P - 3  # the general Weierstrass a-term; NOT 0, unlike the toy-field family
+A = P - 3  # the general Weierstrass a-term; NOT 0, unlike the small-curve family
 B = 0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B
 GX = 0x6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296
 GY = 0x4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5
@@ -217,23 +217,23 @@ def run_point_op(kind, p, a, limb_bits, x1, y1, x2=None, y2=None, tamper_name=No
     seed = {"x1": x1, "y1": y1}
     if kind == "add":
         if x1 == x2:
-            raise ToyFieldCollisionP256(f"x1 == x2 == {x1}, addition formula needs distinct points")
+            raise SmallFieldCollisionP256(f"x1 == x2 == {x1}, addition formula needs distinct points")
         seed.update({"x2": x2, "y2": y2})
         formula = add_formula(p)
     else:
         if y1 == 0:
-            raise ToyFieldCollisionP256("y1 == 0, a 2-torsion point -- doubling formula divides by 2*y1")
+            raise SmallFieldCollisionP256("y1 == 0, a 2-torsion point -- doubling formula divides by 2*y1")
         formula = double_formula(p, a)
     vals, records = eval_formula_v2(formula, seed, p, limb_bits, tamper_name, tamper_bit)
     return {"kind": kind, "seed": seed, "formula": formula, "records": records,
             "x3": vals["x3"], "y3": vals["y3"]}
 
 
-class ToyFieldCollisionP256(Exception):
+class SmallFieldCollisionP256(Exception):
     """At real P-256 scale (n is a ~256-bit prime) this is astronomically
-    unlikely -- unlike the toy-field family, where it's a real, handled
+    unlikely -- unlike the small-curve family, where it's a real, handled
     event -- but the guard is kept for defensive completeness and
-    documented the same way, see ecdsa_trace.py's ToyFieldCollision."""
+    documented the same way, see ecdsa_trace.py's SmallFieldCollision."""
 
 
 # --- untraced setup: real signature generation, the independent
@@ -387,7 +387,7 @@ def generate_genuine_fragment(seed, n_ops, limb_bits=8, z=None):
 
     try:
         fragment = run_ladder_fragment(u1, G, n_ops, prefix_ops, limb_bits)
-    except ToyFieldCollisionP256:
+    except SmallFieldCollisionP256:
         return generate_genuine_fragment(seed + 1_000_003, n_ops, limb_bits, z=z)  # vanishingly rare at this scale, retry with a different seed
 
     bad = local_consistency_report(fragment, limb_bits)
@@ -442,7 +442,7 @@ def generate_tampered_fragment(seed, n_ops, bucket, limb_bits=8, z=None):
         tampered_fragment = run_ladder_fragment(
             genuine["u1"], G, n_ops, genuine["prefix_ops"], limb_bits,
             tamper_at=(op_idx, step_name, bit))
-    except ToyFieldCollisionP256:
+    except SmallFieldCollisionP256:
         return generate_tampered_fragment(seed + 1_000_003, n_ops, bucket, limb_bits, z=z)
 
     bad = local_consistency_report(tampered_fragment, limb_bits)

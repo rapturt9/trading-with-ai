@@ -11,49 +11,49 @@ The curated mechanistic map of the trace-verification harness. Read this alone t
 
 ```mermaid
 flowchart TD
-    subgraph DATA["Dataset -- sha256_trace.py:build_dataset() -- 84 traces, deterministic"]
+    subgraph DATA["Dataset -- src/sha256_trace.py:build_dataset() -- 84 traces, deterministic"]
         G["42 genuine traces\n(seeds 1-42)"]
         T["42 tampered traces\n(seeds 43-84, 14 each in\nearly / middle / late bucket)"]
     end
 
     DATA --> RENDER["render_trace(): binary format,\nline-numbered, decomposed arithmetic\n(~63.4k tokens/trace)"]
-    RENDER --> PROMPT["build_prompt(): wrap in prompt_template.md"]
+    RENDER --> PROMPT["build_prompt(): wrap in prompts/raw_trace.md"]
 
     PROMPT --> P1["Phase 1 (complete)\nREASONING_PARAMS: effort=medium\n(claude-opus-4.6: max_tokens=4096)"]
     PROMPT --> P1B["Phase 1b (complete)\nMAX_EFFORT_REASONING_PARAMS: real per-provider max"]
 
     P1 --> M1["gpt-4o (no channel)\no3 (medium)\ngpt-5 (medium)\nclaude-opus-4.6 (4096-tok budget)"]
-    M1 --> R1["results.jsonl\n336 calls, $198.49"]
+    M1 --> R1["results/raw.jsonl\n336 calls, $198.49"]
 
     P1B --> M2["gpt-4o (unchanged)\no3 (effort=high, its real ceiling)\ngpt-5 / gpt-5.5 (effort=xhigh)\nclaude-opus-4.6 (effort=max)\nclaude-fable-5 (effort=max) -- PILOT ONLY,\n  100% refused, dropped from live run"]
-    M2 --> R2["results_maxeffort.jsonl\n420 calls (5 models x 84), $427.19,\nseparate cache tag maxeffort-binary-64"]
+    M2 --> R2["results/raw_maxeffort.jsonl\n420 calls (5 models x 84), $427.19,\nseparate cache tag maxeffort-binary-64"]
 
-    R1 --> SCORE["score.py: right-for-right-reason\nagainst ground truth (kind, tamper_step)"]
+    R1 --> SCORE["src/score.py: right-for-right-reason\nagainst ground truth (kind, tamper_step)"]
     R2 --> SCORE
     SCORE --> OUT["per-model outcome counts:\nTN / FP / FN / TP_wrong_round / TP_r4r / UNPARSEABLE"]
 
-    PROMPT --> INSPECT["Inspect redo (complete)\ninspect_task.py: same 5-model roster,\nsame MAX_EFFORT_REASONING_PARAMS,\nvia inspect_ai Task/Scorer instead of\nthe raw-harness request loop"]
-    INSPECT --> R3["logs_inspect/*.eval\n420 calls (5 models x 84), ~$449.79 (est.)"]
-    R3 --> SCORE2["r4r_scorer() inside inspect_task.py:\nsame score.py rule, stored in\nSample.scores.metadata.outcome"]
-    SCORE2 --> OUT2["summarize_inspect_logs.py:\nsame per-model outcome counts,\ncross-checked against R2's"]
+    PROMPT --> INSPECT["Inspect redo (complete)\nsrc/inspect_task.py: same 5-model roster,\nsame MAX_EFFORT_REASONING_PARAMS,\nvia inspect_ai Task/Scorer instead of\nthe raw-harness request loop"]
+    INSPECT --> R3["data/logs_raw/*.eval\n420 calls (5 models x 84), ~$449.79 (est.)"]
+    R3 --> SCORE2["r4r_scorer() inside src/inspect_task.py:\nsame src/score.py rule, stored in\nSample.scores.metadata.outcome"]
+    SCORE2 --> OUT2["src/summarize_inspect_logs.py:\nsame per-model outcome counts,\ncross-checked against R2's"]
 ```
 
-Model selection rationale differs by phase: Phase 1's 4 models are chosen by published METR 50%-time-horizon (cheapest per horizon tier); Phase 1b's 2 additions (`claude-fable-5`, `gpt-5.5`) are chosen by Epoch Capability Index (epoch.ai/eci) rank instead, to test a genuinely-more-capable model rather than only a longer-horizon one. Both phases share the same dataset, prompt, base format, and scoring rule -- only the model roster and reasoning-effort setting differ, so the two `results*.jsonl` files are a controlled medium-vs-max-effort comparison. The Inspect redo (`inspect_task.py`) is a third, independent pass over the same Phase 1b dataset/prompts/settings, through `inspect_ai`'s `Task`/`Scorer` machinery instead of `run_experiment.py`'s raw request loop, run once results/README.md's "Inspect redo" section for the cross-validation this gives.
+Model selection rationale differs by phase: Phase 1's 4 models are chosen by published METR 50%-time-horizon (cheapest per horizon tier); Phase 1b's 2 additions (`claude-fable-5`, `gpt-5.5`) are chosen by Epoch Capability Index (epoch.ai/eci) rank instead, to test a genuinely-more-capable model rather than only a longer-horizon one. Both phases share the same dataset, prompt, base format, and scoring rule -- only the model roster and reasoning-effort setting differ, so the two `results*.jsonl` files are a controlled medium-vs-max-effort comparison. The Inspect redo (`src/inspect_task.py`) is a third, independent pass over the same Phase 1b dataset/prompts/settings, through `inspect_ai`'s `Task`/`Scorer` machinery instead of `src/run_experiment.py`'s raw request loop, run once results/README.md's "Inspect redo" section for the cross-validation this gives.
 
 # Current map
 
 | Component | Path | What it does |
 |-----------|------|---|
-| Trace generator + tamper injector | `sha256_trace.py` | Deterministic, seeded SHA-256 compute, verified against `hashlib`; injects one self-consistent single-bit tamper at a chosen round; renders the full trace text a model sees. |
-| Scorer | `score.py` | Parses `VERDICT`/`ROUND` from a model response; applies right-for-right-reason scoring against ground truth. |
-| Prompt template | `prompt_template.md` | Verbatim instruction text wrapping `{trace}`. |
-| Harness (raw) | `run_experiment.py` | Builds the 84-trace dataset, builds prompts, calls OpenRouter (cached), writes `results.jsonl` / `results_maxeffort.jsonl`. Has `--dry-run`/`--pilot`/`--live`/`--assert-cached` (Phase 1), `--pilot-max-effort`/`--live-max-effort`/`--assert-cached-max-effort` (Phase 1b), and `--ablate-format`/`--ablate-length` (each composable with `--assert-cached`) modes. |
-| Harness (Inspect) | `inspect_task.py` | Same dataset/prompt/scoring, reused directly (not reimplemented) from the modules above, run through `inspect_ai`'s `Task`/`Scorer` API instead of a raw request loop. Per-model `reasoning_effort`/`max_tokens` read straight from `run_experiment.py`'s `MAX_EFFORT_REASONING_PARAMS`/`COMPLETION_MAX_TOKENS` (single source of truth). Run one model at a time via `inspect eval` (see `README.md`'s Reproduce section for the 5 commands); no cache-replay mode exists for this harness, unlike `run_experiment.py`'s `--assert-cached`. |
-| Log summarizer (Inspect) | `summarize_inspect_logs.py` | Reads `logs_inspect/*.eval`, recomputes the same outcome table `score.py` produces for the raw harness. Handles a real `inspect_ai` 0.3.189 bug (below) via a raw-zip fallback for the one log it affects. |
+| Trace generator + tamper injector | `src/sha256_trace.py` | Deterministic, seeded SHA-256 compute, verified against `hashlib`; injects one self-consistent single-bit tamper at a chosen round; renders the full trace text a model sees. |
+| Scorer | `src/score.py` | Parses `VERDICT`/`ROUND` from a model response; applies right-for-right-reason scoring against ground truth. |
+| Prompt template | `prompts/raw_trace.md` | Verbatim instruction text wrapping `{trace}`. |
+| Harness (raw) | `src/run_experiment.py` | Builds the 84-trace dataset, builds prompts, calls OpenRouter (cached), writes `results/raw.jsonl` / `results/raw_maxeffort.jsonl`. Has `--dry-run`/`--pilot`/`--live`/`--assert-cached` (Phase 1), `--pilot-max-effort`/`--live-max-effort`/`--assert-cached-max-effort` (Phase 1b), and `--ablate-format`/`--ablate-length` (each composable with `--assert-cached`) modes. |
+| Harness (Inspect) | `src/inspect_task.py` | Same dataset/prompt/scoring, reused directly (not reimplemented) from the modules above, run through `inspect_ai`'s `Task`/`Scorer` API instead of a raw request loop. Per-model `reasoning_effort`/`max_tokens` read straight from `src/run_experiment.py`'s `MAX_EFFORT_REASONING_PARAMS`/`COMPLETION_MAX_TOKENS` (single source of truth). Run one model at a time via `inspect eval` (see `README.md`'s Reproduce section for the 5 commands); no cache-replay mode exists for this harness, unlike `src/run_experiment.py`'s `--assert-cached`. |
+| Log summarizer (Inspect) | `src/summarize_inspect_logs.py` | Reads `data/logs_raw/*.eval`, recomputes the same outcome table `src/score.py` produces for the raw harness. Handles a real `inspect_ai` 0.3.189 bug (below) via a raw-zip fallback for the one log it affects. |
 
 # Pseudocode
 
-## `sha256_trace.py:compress`
+## `src/sha256_trace.py:compress`
 ```
 state = H0  # 8 initial hash words
 for t in 0..63:
@@ -71,7 +71,7 @@ for t in 0..63:
 return per-round records, final hash words
 ```
 
-## `sha256_trace.py:generate_genuine(seed)` / `generate_tampered(seed, bucket)`
+## `src/sha256_trace.py:generate_genuine(seed)` / `generate_tampered(seed, bucket)`
 ```
 generate_genuine(seed):
     msg = 50 deterministic pseudo-random bytes from seed
@@ -93,7 +93,7 @@ generate_tampered(seed, bucket):
     return {..., tamper_step, tamper_bit, bucket}
 ```
 
-## `sha256_trace.py:render_trace(trace)`
+## `src/sha256_trace.py:render_trace(trace)`
 ```
 print message hex
 print W[0..63] each on its own line
@@ -106,7 +106,7 @@ print final digest
 ```
 Deliberately this verbose (~22.8k tokens/trace) so the model faces the same arithmetic depth chippy's design used, not a compressed summary that would make the task meaningfully easier.
 
-## `score.py:score(ground_truth_is_tampered, ground_truth_round, parsed_response)`
+## `src/score.py:score(ground_truth_is_tampered, ground_truth_round, parsed_response)`
 ```
 if parsed verdict missing: return UNPARSEABLE
 if not ground_truth_is_tampered:
@@ -117,7 +117,7 @@ if model's claimed round == ground_truth_round: return TP_r4r
 else: return TP_wrong_round        # said tampered, wrong round -> counts as a miss
 ```
 
-## `run_experiment.py:build_dataset()`
+## `src/run_experiment.py:build_dataset()`
 ```
 items = []
 seed = 0
@@ -209,7 +209,7 @@ log a warning; return None, None, None, None, {}               # degrade to an e
 trace_text = render_trace(item.trace, base, decompose_add)
 prompt = build_prompt(trace_text)
 key = sha256(f"{tag}|{model}|{prompt}|{idx}")[:24]     # tag differs by phase: "main-..." (Phase 1) vs
-path = cache/{key}.json                                 # "maxeffort-..." (Phase 1b) -- never collide
+path = data/cache/{key}.json                                 # "maxeffort-..." (Phase 1b) -- never collide
 
 if path exists:
     load {model, prompt_hash, prompt, response, reasoning, reasoning_details, refusal, usage} from disk
@@ -222,7 +222,7 @@ else:
     write {model, prompt_hash: key, prompt, response: response_text, reasoning: reasoning_text,
            reasoning_details, refusal, usage} to path   # full prompt + reasoning + refusal now persisted
 
-parsed = parse_response(response_text)                   # already robust to None/empty (score.py)
+parsed = parse_response(response_text)                   # already robust to None/empty (src/score.py)
 outcome = score(item.kind == tampered, item.trace.tamper_step, parsed)
 return idx, {model, kind, bucket, outcome}, usage
 ```
@@ -255,8 +255,8 @@ if mode == "pilot": results_filename = results_filename with "_pilot" inserted b
                      # reproduce it byte-identical, that's the whole point of the check.)
 write all_results to {results_filename}
 ```
-`run_main(mode, ...)` = `run_variant(mode, MODELS, REASONING_PARAMS, "main", "results.jsonl", ...)`.
-`run_max_effort(mode, ..., models=None)` = `run_variant(mode, models or ALL_MODELS, MAX_EFFORT_REASONING_PARAMS, "maxeffort", "results_maxeffort.jsonl", ...)`. The CLI's `--live-max-effort`/`--assert-cached-max-effort` pass `models=LIVE_MAX_EFFORT_MODELS` explicitly (5 models, `claude-fable-5` excluded); `--pilot-max-effort` leaves `models=None` and gets the default `ALL_MODELS` (7 models: the original 4 plus `claude-fable-5`, `gpt-5.5`, `claude-opus-4.8`) so refusal/failure findings on any candidate model stay on record even if it never joins the live roster.
+`run_main(mode, ...)` = `run_variant(mode, MODELS, REASONING_PARAMS, "main", "results/raw.jsonl", ...)`.
+`run_max_effort(mode, ..., models=None)` = `run_variant(mode, models or ALL_MODELS, MAX_EFFORT_REASONING_PARAMS, "maxeffort", "results/raw_maxeffort.jsonl", ...)`. The CLI's `--live-max-effort`/`--assert-cached-max-effort` pass `models=LIVE_MAX_EFFORT_MODELS` explicitly (5 models, `claude-fable-5` excluded); `--pilot-max-effort` leaves `models=None` and gets the default `ALL_MODELS` (7 models: the original 4 plus `claude-fable-5`, `gpt-5.5`, `claude-opus-4.8`) so refusal/failure findings on any candidate model stay on record even if it never joins the live roster.
 
 `--dry-run` short-circuits before any of this: it only computes token counts via tiktoken, zero network, zero cost.
 
@@ -266,7 +266,7 @@ Cache entries written **before 2026-07-07** (all 336 Phase-1 calls, plus the abl
 1. **The raw prompt text.** Only its hash was stored. It is exactly reconstructible (same seed -> same `render_trace`/`build_prompt` output, confirmed byte-identical by `--assert-cached` matching all 336 cached calls with zero new network calls), but reading it back required running code, not opening a JSON file. Fixed going forward (Step 3 above); not retroactively fixable for old entries without paying to re-call (which would also produce different, not the same, output).
 2. **Reasoning/thinking content and refusal text.** `call_model` used to read only `choices[0].message.content`. If OpenRouter's response also included `message.reasoning`/`message.reasoning_details`/`message.refusal`, those fields were read and then discarded, never written to any cache file. Unrecoverable for the 336 Phase-1 calls; fixed going forward (Step 2/3 above).
 
-**A real `inspect_ai` 0.3.189 bug (found 2026-07-08, not this project's code):** `GenerateConfig.reasoning_effort="max"` is accepted for making the actual OpenRouter API call, but the *persisted* `EvalLog.plan.config` schema's `Literal` type does not include `"max"` (only `none/minimal/low/medium/high/xhigh`) -- so `read_eval_log()` raises a pydantic `ValidationError` on `log_finish` for any run that used `effort="max"` (only `claude-opus-4.6` in this project, the sole model whose `MAX_EFFORT_REASONING_PARAMS` entry is `"max"` rather than `"high"`/`"xhigh"`). The `.eval` file itself is not corrupted -- confirmed via `zipfile.testzip()` and the presence of all 84 `samples/*.json` entries -- so `summarize_inspect_logs.py` reads that one file's raw sample JSON directly out of the zip instead of through `read_eval_log()`.
+**A real `inspect_ai` 0.3.189 bug (found 2026-07-08, not this project's code):** `GenerateConfig.reasoning_effort="max"` is accepted for making the actual OpenRouter API call, but the *persisted* `EvalLog.plan.config` schema's `Literal` type does not include `"max"` (only `none/minimal/low/medium/high/xhigh`) -- so `read_eval_log()` raises a pydantic `ValidationError` on `log_finish` for any run that used `effort="max"` (only `claude-opus-4.6` in this project, the sole model whose `MAX_EFFORT_REASONING_PARAMS` entry is `"max"` rather than `"high"`/`"xhigh"`). The `.eval` file itself is not corrupted -- confirmed via `zipfile.testzip()` and the presence of all 84 `samples/*.json` entries -- so `src/summarize_inspect_logs.py` reads that one file's raw sample JSON directly out of the zip instead of through `read_eval_log()`.
 
 # Control flow (as of Phase 1b, both retry paths and the refusal short-circuit shown)
 
@@ -297,10 +297,10 @@ flowchart TD
 
 # Review order
 
-1. `sha256_trace.py` — the foundation; run its `__main__` self-test first.
-2. `score.py` — scoring rule, self-tested.
-3. `prompt_template.md` — exact text sent to a model.
-4. `run_experiment.py` — the harness tying it together; only `--dry-run` has been run.
+1. `src/sha256_trace.py` — the foundation; run its `__main__` self-test first.
+2. `src/score.py` — scoring rule, self-tested.
+3. `prompts/raw_trace.md` — exact text sent to a model.
+4. `src/run_experiment.py` — the harness tying it together; only `--dry-run` has been run.
 
 ---
 
@@ -308,11 +308,11 @@ flowchart TD
 
 New files, each a sibling of the Phase 1/1b code (which is untouched; `--assert-cached` still reproduces Phase 1/1b):
 
-- `sha256_trace.py :: render_dual(trace, line_numbers, binary_bitops, binary_new, decimal_additions)` — dual binary+decimal renderer (additions in DECIMAL, bitops in binary, state in both). `local_consistency_report(trace)` — Stage-0 verifier (genuine → [], tampered → exactly [(tamper_step,'new_a')]). `python3 sha256_trace.py --dry-run` — token count over 84 traces.
-- `prompt_template_checkable.md` + `run_experiment.py :: build_prompt_v2()` — short 5-rule prompt + JSON schema (keys `call`/`tamper_r`, no VERDICT:/ROUND: collision). `ECI_SCORES`, `PRICES`, `call_cost()` added to run_experiment.py as the single source of truth.
-- `score_checkable.py` — `extract_json`, `parse_response_checkable` (final-block-first / JSON-fallback), `score_checkable` (reuses score.py rule), `is_strict_mechanism`, `true_and_printed_sums`, `arithmetic_error_stats`, metrics `auroc`/`bootstrap_auroc_ci`/`tpr_at_fpr`/`brier`; `_selftest()` covers the 8 audited bug classes. Must pass before any spend.
-- `inspect_task_checkable.py` — Inspect `Task`/`Scorer`; `generate(cache=True)` (free replay); levers `renderer`/`prompt_variant`/`reasoning_effort`/`max_tokens`/`pilot_n`/`balanced_n` all `-T`; scorer stores every metric input + full provenance in `Score.metadata`.
-- `stage0_render.py` (invariant proof + example artifacts), `analyze_checkable.py` (logs → `results_checkable.jsonl` + metric suite + cost, raw-zip fallback for the effort=max log bug), `make_plots_checkable.py` (scaling + before/after plots). Audit layer: `artifacts/` + `artifacts/README.md`.
+- `src/sha256_trace.py :: render_dual(trace, line_numbers, binary_bitops, binary_new, decimal_additions)` — dual binary+decimal renderer (additions in DECIMAL, bitops in binary, state in both). `local_consistency_report(trace)` — Stage-0 verifier (genuine → [], tampered → exactly [(tamper_step,'new_a')]). `python3 src/sha256_trace.py --dry-run` — token count over 84 traces.
+- `prompts/checkable.md` + `src/run_experiment.py :: build_prompt_v2()` — short 5-rule prompt + JSON schema (keys `call`/`tamper_r`, no VERDICT:/ROUND: collision). `ECI_SCORES`, `PRICES`, `call_cost()` added to src/run_experiment.py as the single source of truth.
+- `src/score_checkable.py` — `extract_json`, `parse_response_checkable` (final-block-first / JSON-fallback), `score_checkable` (reuses src/score.py rule), `is_strict_mechanism`, `true_and_printed_sums`, `arithmetic_error_stats`, metrics `auroc`/`bootstrap_auroc_ci`/`tpr_at_fpr`/`brier`; `_selftest()` covers the 8 audited bug classes. Must pass before any spend.
+- `src/inspect_task_checkable.py` — Inspect `Task`/`Scorer`; `generate(cache=True)` (free replay); levers `renderer`/`prompt_variant`/`reasoning_effort`/`max_tokens`/`pilot_n`/`balanced_n` all `-T`; scorer stores every metric input + full provenance in `Score.metadata`.
+- `src/render_examples.py` (invariant proof + example artifacts), `src/analyze_checkable.py` (logs → `results/checkable.jsonl` + metric suite + cost, raw-zip fallback for the effort=max log bug), `src/make_plots_checkable.py` (scaling + before/after plots). Audit layer: `review/artifacts/` + `review/artifacts/README.md`.
 
 ## Full experimental setup (Phase 3)
 
@@ -325,9 +325,9 @@ flowchart TD
   IT -->|Arm A dual, N=84| M5[gpt-4o / o3 / gpt-5 / opus-4.6 / gpt-5.5]
   IT -->|Arm B binary, n=28| MB[gpt-5.5 attribution control]
   IT -.probes n=2.-> PR[opus-4.8 + fable-5 -> both failed -> dropped]
-  M5 --> LG[logs_inspect_checkable/*.eval : input+output+reasoning+provenance]
+  M5 --> LG[data/logs_checkable/*.eval : input+output+reasoning+provenance]
   MB --> LG
-  LG --> AZ[analyze_checkable: score_checkable -> results_checkable.jsonl + metric suite + cost]
+  LG --> AZ[analyze_checkable: score_checkable -> results/checkable.jsonl + metric suite + cost]
   AZ --> PL[make_plots_checkable + README table]
 ```
 

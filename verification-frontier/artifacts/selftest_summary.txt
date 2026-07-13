@@ -8,7 +8,7 @@
 [SHA n_blocks=4] all buckets x 5 seeds x 3 tamper classes (addition/bitwise/schedule_word): exactly-one-flag invariant holds
 [SHA n_blocks=8] all buckets x 5 seeds x 3 tamper classes (addition/bitwise/schedule_word): exactly-one-flag invariant holds
 
-=== Toy-field ECDSA verify + line-tamper self-tests ===
+=== Small-curve ECDSA verify + line-tamper self-tests ===
 [ECDSA bits=8] constructed Curve(bits=8, p=223, b=5, n=229, h=1)
 [ECDSA bits=8] 5 genuine seeds: matches Jacobian reference verify, 0 inconsistent lines, traced 'v == r' check passes, final point R always on curve
 [ECDSA bits=8] corrupted-signature self-test: reference verify correctly returns False

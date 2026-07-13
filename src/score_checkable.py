@@ -1,4 +1,4 @@
-"""Phase 3 scoring + metric suite (redesign-proposal.md, section "Metric suite").
+"""Checkable-rendering scoring + metric suite.
 
 Layers on top of score.py (which stays byte-identical as the canonical
 verdict/round scorer). Adds:
@@ -289,7 +289,7 @@ def brier(ps, ys):
 
 
 # --------------------------------------------------------------------------
-# Self-test: the 8 audited bug classes (redesign-proposal.md "Scoring audit")
+# Self-test: the 8 audited bug classes
 # --------------------------------------------------------------------------
 
 def _selftest():

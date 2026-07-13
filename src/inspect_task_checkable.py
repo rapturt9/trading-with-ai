@@ -1,5 +1,5 @@
-"""Phase 3 Inspect (inspect_ai) task: maximally-observable SHA-256 tamper
-verification (redesign-proposal.md).
+"""Checkable-rendering Inspect (inspect_ai) task: SHA-256 tamper
+verification.
 
 Every lever is a `-T` task parameter, nothing hardcoded:
   model_key, renderer (dual|binary), prompt_variant (v2), reasoning_effort,
@@ -9,17 +9,17 @@ Reproducibility (per the reproducibility-and-evidence skill + Ram's directive):
   - Native Inspect caching (cache=True) on the generate call -> a rerun is a
     FREE replay (zero new API calls) as long as model/prompt/config are
     unchanged. This is Phase 3's equivalent of the older --assert-cached.
-  - .eval logs in logs_inspect_checkable/ capture the full prompt, full visible output,
+  - .eval logs in data/logs_checkable/ capture the full prompt, full visible output,
     and ContentReasoning blocks natively.
   - The scorer stores, per sample, the full parsed JSON + every metric input +
     provenance (model_key, ECI, effort, max_tokens, renderer, seed, git commit,
-    exact model id as returned by the API) so results_checkable.jsonl and all headline
+    exact model id as returned by the API) so results/checkable.jsonl and all headline
     numbers are recomputable offline from the logs with zero new calls.
 
 Reproduce (one model per invocation; see README.md Reproduce block for the full
 set with every -T parameter):
-    inspect eval inspect_task_checkable.py --model openrouter/openai/gpt-4o \
-        -T model_key=openai/gpt-4o -T renderer=dual --log-dir logs_inspect_checkable
+    inspect eval src/inspect_task_checkable.py --model openrouter/openai/gpt-4o \
+        -T model_key=openai/gpt-4o -T renderer=dual --log-dir data/logs_checkable
 """
 
 import json

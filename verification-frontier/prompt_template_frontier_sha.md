@@ -1,6 +1,6 @@
 # N50 harness prompt: SHA multi-block family
 
-Generalizes `../prompt_template_checkable.md` from a single 64-round
+Generalizes `../prompts/checkable.md` from a single 64-round
 block to a chained (Merkle-Damgard) N-block trace, and from "name the round"
 to "name the exact (block, round, field)" -- this family's generator can
 tamper any of three classes (a plain addition output `new_a`, one of the four

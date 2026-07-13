@@ -18,13 +18,13 @@ the `model_key` task parameter -- so there is one source of truth for those
 settings, not a duplicated copy.
 
 Reproduce (one model at a time, each needs its own reasoning_effort/max_tokens):
-    inspect eval inspect_task.py --model openrouter/openai/gpt-4o -T model_key=openai/gpt-4o
-    inspect eval inspect_task.py --model openrouter/openai/o3 -T model_key=openai/o3
-    inspect eval inspect_task.py --model openrouter/openai/gpt-5 -T model_key=openai/gpt-5
-    inspect eval inspect_task.py --model openrouter/anthropic/claude-opus-4.6 -T model_key=anthropic/claude-opus-4.6
-    inspect eval inspect_task.py --model openrouter/openai/gpt-5.5 -T model_key=openai/gpt-5.5
+    inspect eval src/inspect_task.py --model openrouter/openai/gpt-4o -T model_key=openai/gpt-4o
+    inspect eval src/inspect_task.py --model openrouter/openai/o3 -T model_key=openai/o3
+    inspect eval src/inspect_task.py --model openrouter/openai/gpt-5 -T model_key=openai/gpt-5
+    inspect eval src/inspect_task.py --model openrouter/anthropic/claude-opus-4.6 -T model_key=anthropic/claude-opus-4.6
+    inspect eval src/inspect_task.py --model openrouter/openai/gpt-5.5 -T model_key=openai/gpt-5.5
 
-View results: inspect view --log-dir logs_inspect
+View results: inspect view --log-dir data/logs_raw
 """
 
 import json

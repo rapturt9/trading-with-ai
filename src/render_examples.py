@@ -7,7 +7,7 @@ equations, and a TAMPERED trace has EXACTLY ONE: the tampered round's `new_a`
 both bases from the same integer, this integer-level check certifies both-base
 consistency at once. Verified across all 84 seeded traces, not just the examples.
 
-Writes audit artifacts into artifacts/. Run: python3 stage0_render.py
+Writes audit artifacts into review/artifacts/. Run: python3 src/render_examples.py
 """
 
 import os
@@ -15,7 +15,7 @@ import os
 from run_experiment import build_dataset, build_prompt_v2
 from sha256_trace import render_dual, local_consistency_report
 
-ART = os.path.join(os.path.dirname(__file__), "artifacts")
+ART = os.path.join(os.path.dirname(__file__), "..", "review", "artifacts")
 
 
 def highlight_tamper(rendered, tamper_step):
@@ -98,7 +98,7 @@ def main():
                 f"the `new a` line is the single inconsistency.\n\n")
         f.write("\n".join(excerpt))
 
-    print(f"Wrote artifacts/example_genuine_dual.txt, example_tampered_dual.txt "
+    print(f"Wrote review/artifacts/example_genuine_dual.txt, example_tampered_dual.txt "
           f"(idx {first_tampered_idx}, step {t_step}), example_tampered_round_excerpt.txt")
 
     # true printed sums check for the tampered round, so the excerpt is self-proving
