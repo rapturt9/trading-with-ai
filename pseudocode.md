@@ -297,10 +297,10 @@ flowchart TD
 
 # Review order
 
-1. `/home/ram/obsidian/experiments/260706-credible-deals-polish/rq3-replication/sha256_trace.py` — the foundation; run its `__main__` self-test first.
-2. `/home/ram/obsidian/experiments/260706-credible-deals-polish/rq3-replication/score.py` — scoring rule, self-tested.
-3. `/home/ram/obsidian/experiments/260706-credible-deals-polish/rq3-replication/prompt_template.md` — exact text sent to a model.
-4. `/home/ram/obsidian/experiments/260706-credible-deals-polish/rq3-replication/run_experiment.py` — the harness tying it together; only `--dry-run` has been run.
+1. `sha256_trace.py` — the foundation; run its `__main__` self-test first.
+2. `score.py` — scoring rule, self-tested.
+3. `prompt_template.md` — exact text sent to a model.
+4. `run_experiment.py` — the harness tying it together; only `--dry-run` has been run.
 
 ---
 
@@ -309,10 +309,10 @@ flowchart TD
 New files, each a sibling of the Phase 1/1b code (which is untouched; `--assert-cached` still reproduces Phase 1/1b):
 
 - `sha256_trace.py :: render_dual(trace, line_numbers, binary_bitops, binary_new, decimal_additions)` — dual binary+decimal renderer (additions in DECIMAL, bitops in binary, state in both). `local_consistency_report(trace)` — Stage-0 verifier (genuine → [], tampered → exactly [(tamper_step,'new_a')]). `python3 sha256_trace.py --dry-run` — token count over 84 traces.
-- `prompt_template_v2.md` + `run_experiment.py :: build_prompt_v2()` — short 5-rule prompt + JSON schema (keys `call`/`tamper_r`, no VERDICT:/ROUND: collision). `ECI_SCORES`, `PRICES`, `call_cost()` added to run_experiment.py as the single source of truth.
-- `score_v2.py` — `extract_json`, `parse_response_v2` (final-block-first / JSON-fallback), `score_v2` (reuses score.py rule), `is_strict_mechanism`, `true_and_printed_sums`, `arithmetic_error_stats`, metrics `auroc`/`bootstrap_auroc_ci`/`tpr_at_fpr`/`brier`; `_selftest()` covers the 8 audited bug classes. Must pass before any spend.
-- `inspect_task_v2.py` — Inspect `Task`/`Scorer`; `generate(cache=True)` (free replay); levers `renderer`/`prompt_variant`/`reasoning_effort`/`max_tokens`/`pilot_n`/`balanced_n` all `-T`; scorer stores every metric input + full provenance in `Score.metadata`.
-- `stage0_render.py` (invariant proof + example artifacts), `analyze_v2.py` (logs → `results_v2.jsonl` + metric suite + cost, raw-zip fallback for the effort=max log bug), `make_plots_v2.py` (scaling + before/after plots). Audit layer: `artifacts/` + `artifacts/README.md`.
+- `prompt_template_checkable.md` + `run_experiment.py :: build_prompt_v2()` — short 5-rule prompt + JSON schema (keys `call`/`tamper_r`, no VERDICT:/ROUND: collision). `ECI_SCORES`, `PRICES`, `call_cost()` added to run_experiment.py as the single source of truth.
+- `score_checkable.py` — `extract_json`, `parse_response_checkable` (final-block-first / JSON-fallback), `score_checkable` (reuses score.py rule), `is_strict_mechanism`, `true_and_printed_sums`, `arithmetic_error_stats`, metrics `auroc`/`bootstrap_auroc_ci`/`tpr_at_fpr`/`brier`; `_selftest()` covers the 8 audited bug classes. Must pass before any spend.
+- `inspect_task_checkable.py` — Inspect `Task`/`Scorer`; `generate(cache=True)` (free replay); levers `renderer`/`prompt_variant`/`reasoning_effort`/`max_tokens`/`pilot_n`/`balanced_n` all `-T`; scorer stores every metric input + full provenance in `Score.metadata`.
+- `stage0_render.py` (invariant proof + example artifacts), `analyze_checkable.py` (logs → `results_checkable.jsonl` + metric suite + cost, raw-zip fallback for the effort=max log bug), `make_plots_checkable.py` (scaling + before/after plots). Audit layer: `artifacts/` + `artifacts/README.md`.
 
 ## Full experimental setup (Phase 3)
 
@@ -321,14 +321,14 @@ flowchart TD
   S[seeds 1..84 deterministic] --> BD[build_dataset: 42 genuine + 42 tampered, 14/14/14 buckets]
   BD --> RD[render_dual: binary bitops + DECIMAL additions, both from same int]
   RD --> P[build_prompt_v2: 5 rules + JSON schema + fixed final block]
-  P --> IT[inspect_task_v2, cache=True, max effort per model]
+  P --> IT[inspect_task_checkable, cache=True, max effort per model]
   IT -->|Arm A dual, N=84| M5[gpt-4o / o3 / gpt-5 / opus-4.6 / gpt-5.5]
   IT -->|Arm B binary, n=28| MB[gpt-5.5 attribution control]
   IT -.probes n=2.-> PR[opus-4.8 + fable-5 -> both failed -> dropped]
-  M5 --> LG[logs_inspect_v2/*.eval : input+output+reasoning+provenance]
+  M5 --> LG[logs_inspect_checkable/*.eval : input+output+reasoning+provenance]
   MB --> LG
-  LG --> AZ[analyze_v2: score_v2 -> results_v2.jsonl + metric suite + cost]
-  AZ --> PL[make_plots_v2 + README table]
+  LG --> AZ[analyze_checkable: score_checkable -> results_checkable.jsonl + metric suite + cost]
+  AZ --> PL[make_plots_checkable + README table]
 ```
 
 ## Control flow (per trace, Phase 3)
@@ -341,7 +341,7 @@ flowchart TD
   PJ -->|yes| V[verdict/round from final block]
   PJ -->|no, JSON has call| VJ[fallback to JSON call/tamper_r]
   PJ -->|neither| U[UNPARSEABLE]
-  V --> SC[score_v2 vs ground truth -> TN/TP_r4r/TP_wrong_round/FP/FN]
+  V --> SC[score_checkable vs ground truth -> TN/TP_r4r/TP_wrong_round/FP/FN]
   VJ --> SC
   SC --> DIAG[diagnostics: per-addition arith-error, copy-cheat, verdict-evidence]
   DIAG --> AGG[aggregate: detection, specificity, AUROC+CI, TPR@FP, Brier, per-position]

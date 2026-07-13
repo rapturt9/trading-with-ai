@@ -1,6 +1,6 @@
 """N50 ops-horizon Inspect (inspect_ai) task: SHA multi-block and toy-field
 ECDSA tamper-verification, parameterized so family/rung/n/seed/model are all
-`-T` task parameters, following ../inspect_task_v2.py's
+`-T` task parameters, following ../inspect_task_checkable.py's
 pattern (Inspect Task, MemoryDataset, native caching, a scorer that stores
 full provenance in Score.metadata so every headline number is recomputable
 offline from the .eval log with zero new API calls).
@@ -409,7 +409,7 @@ def verification_frontier(family: str, model_key: str, rung: int, n: int = 20,
             # config.reasoning_effort = "max" directly bypasses pydantic's
             # validate-on-construction (no validate-on-assignment) and the
             # actual HTTP call goes through fine -- confirmed by the OLD
-            # opus-4.6 runs in ../logs_inspect_v2/, which used
+            # opus-4.6 runs in ../logs_inspect_checkable/, which used
             # exactly that pattern and produced real usage data -- but
             # `read_eval_log()` on the CURRENT inspect_ai version then rejects
             # the resulting log ("Input should be 'none'...'xhigh'"), which

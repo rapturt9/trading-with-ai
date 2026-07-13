@@ -1,6 +1,6 @@
 # Phase 3 prompt template (maximally observable, JSON + final block)
 
-Verbatim prompt sent to each model in Phase 3 (`inspect_task_v2.py`). `{trace}` is
+Verbatim prompt sent to each model in Phase 3 (`inspect_task_checkable.py`). `{trace}` is
 substituted with `render_dual()` output (dual binary+decimal rendering). Short,
 five rules, NO procedural carry-chain scaffold (Phase 2/2b proved scaffolds drown
 the best models). The model does all arithmetic in its PRIVATE reasoning channel

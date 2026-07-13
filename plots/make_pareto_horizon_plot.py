@@ -4,11 +4,12 @@ detection, with the Pareto frontier (lower horizon + higher detection is
 better) drawn as a trend curve over the raw scatter, so the underlying trend
 is visible despite the non-monotonic raw points (see tp_r4r_vs_horizon.png).
 
-Data source: README.md "Mapped to capability" table (rq3-replication,
+Data source: README.md "Mapped to capability" table (the root package,
 Phase 1b max-effort results, n=42 per model). Run directly:
     python3 plots/make_pareto_horizon_plot.py
 """
 import math
+import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -67,7 +68,7 @@ ax.grid(True, axis="y", color="#DDDDDD", linewidth=0.8, zorder=0)
 ax.spines[["top", "right"]].set_visible(False)
 ax.legend(frameon=False, fontsize=9, loc="upper left")
 fig.tight_layout()
-out = "/home/ram/obsidian/experiments/260706-credible-deals-polish/rq3-replication/plots/tp_r4r_vs_horizon_pareto.png"
+out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tp_r4r_vs_horizon_pareto.png")
 fig.savefig(out, dpi=150)
 print("wrote", out)
 print("frontier:", [n for _, _, n in frontier], "| dropped per Ram:", [n for _, _, n in dominated])

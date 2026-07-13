@@ -22,7 +22,7 @@ Every family's tamper mechanism (SHA: addition/bitwise/schedule-word; toy and re
 
 **Design notes, in order:** (1) the toy-field ECDSA family was redesigned mid-session on Ram's correction (toy-scale the field, not the scalar against a real 256-bit field; trace the full verification algorithm; no point-granularity lines) -- see `plan.md`'s "ECDSA family redesigned" entry. (2) Stage 0c added the real P-256 family as primary, a linear (not pointwise) multiplication-decomposition rule, and the two composite families -- see `plan.md`'s "Stage 0b"/"Stage 0c" entries, including a real bug the P-256 self-test sweep caught (an earlier version paired ladder doublings/adds per BIT independently in two functions; stopping mid-bit-pair silently dropped a pending operation -- fixed by having both functions walk one shared flat operation sequence).
 
-**Pilot: RUN, $20.37 of the $45 cap, 38 real model calls (corrected 2026-07-12 -- the independent report-agent recount caught a math error: 4+4+4+4+2+4+8+8 across the 8 `.eval` files = 38, not the 40 first stated here), zero parse failures.** `inspect_task_frontier.py` (SHA/toy-ECDSA families 1-2) plus `score_frontier.py` (generalizes the root SHA-256 experiment's right-for-right-reason rule to a 3-part exact location, not just a round). Real per-call cost: gpt-5/o3/gpt-4o all under $0.31/call; opus-4.6 $2.25-2.38/call, matching the root SHA-256 experiment's historical rate despite this harness's leaner JSON schema (inspecting the actual completions showed opus's visible output was short and well-formed -- the cost is real thinking, not runaway visible text). Findings: gpt-5's detection decays cleanly 100%->50%->0% across N=231/448/896 ops (joint fit N50~=448); o3 is a clean bracket, 100% at N=231 and 0% at N=448 (crossing point not further localized by 2 rungs); opus-4.6 remains saturated at 100% through N=896, still an unbounded lower bound; gpt-4o on ECDSA is NOT floor-disengaged like on SHA -- it actively engages but calls every trace TAMPERED (4/4 false positives on genuine), a distinct failure mode worth its own note. Full per-condition table, the joint logistic fits, and the live-grid cost projection are in `plan.md`'s "Pilot RUN" entry (private working note); this file states only what's publicly reportable. Found and fixed one structural bug before any spend: the installed `inspect_ai`'s `GenerateConfig.reasoning_effort` rejects `"max"` (a closed Pydantic Literal), which also explains why 4 old opus/fable-5 `.eval` logs in `../logs_inspect_v2/` are unreadable with the current library version -- fixed by routing `"max"` through `extra_body` instead.
+**Pilot: RUN, $20.37 of the $45 cap, 38 real model calls (corrected 2026-07-12 -- the independent report-agent recount caught a math error: 4+4+4+4+2+4+8+8 across the 8 `.eval` files = 38, not the 40 first stated here), zero parse failures.** `inspect_task_frontier.py` (SHA/toy-ECDSA families 1-2) plus `score_frontier.py` (generalizes the root SHA-256 experiment's right-for-right-reason rule to a 3-part exact location, not just a round). Real per-call cost: gpt-5/o3/gpt-4o all under $0.31/call; opus-4.6 $2.25-2.38/call, matching the root SHA-256 experiment's historical rate despite this harness's leaner JSON schema (inspecting the actual completions showed opus's visible output was short and well-formed -- the cost is real thinking, not runaway visible text). Findings: gpt-5's detection decays cleanly 100%->50%->0% across N=231/448/896 ops (joint fit N50~=448); o3 is a clean bracket, 100% at N=231 and 0% at N=448 (crossing point not further localized by 2 rungs); opus-4.6 remains saturated at 100% through N=896, still an unbounded lower bound; gpt-4o on ECDSA is NOT floor-disengaged like on SHA -- it actively engages but calls every trace TAMPERED (4/4 false positives on genuine), a distinct failure mode worth its own note. Full per-condition table, the joint logistic fits, and the live-grid cost projection are in `plan.md`'s "Pilot RUN" entry (private working note); this file states only what's publicly reportable. Found and fixed one structural bug before any spend: the installed `inspect_ai`'s `GenerateConfig.reasoning_effort` rejects `"max"` (a closed Pydantic Literal), which also explains why 4 old opus/fable-5 `.eval` logs in `../logs_inspect_checkable/` are unreadable with the current library version -- fixed by routing `"max"` through `extra_body` instead.
 
 **Post-pilot audit finding (verdict leak, ECDSA rows only), found and FIXED same evening: `location-metric-only` for the pre-fix data.** `ecdsa_trace.py`'s toy-field renderer (the only ECDSA family this pilot called) printed the genuine/tampered verdict directly as its last line (`v == r ? {valid}`). Per an independent re-scoring, the exact-location `TP_r4r` numbers above are NOT inflated (naming the precise corrupted line isn't derivable from a leaked boolean), but every OTHER verdict-level number from the pre-fix runs (TN, FP, any GENUINE/TAMPERED accuracy not requiring exact location) is confounded and is not reported as verification evidence anywhere in this experiment. Confirmed by direct code inspection that the real-P-256 and composite renderers (Stage 0c) never shared this leak. Fixed: the leaked line is deleted (the model must now do the comparison itself from the separately-printed `v` and `r`), all three renderer modules carry a `RENDERER_VERSION` marker so pre/post-fix data is never mixed, self-test re-run clean. Live-grid ECDSA/toy-field/P-256/composite conditions, paused during the fix, have resumed -- see `plan.md`'s dated audit entry for the full ruling.
 
@@ -34,7 +34,7 @@ The live grid ($250-500, hard cap $600) is pre-authorized (Ram, via the team lea
 
 ```
 # 1. This is vault-native, not a separate repo -- cd into this folder.
-cd experiments/260706-credible-deals-polish/verification-frontier
+cd verification-frontier
 
 # 2. Setup: needs the repo-root files present (imported via
 #    sys.path, not vendored) and tiktoken/numpy/scipy (already in this
@@ -81,8 +81,8 @@ python3 token_dry_run.py
 #    and every -T param; they do NOT replay the existing logs_pilot/*.eval
 #    for free unless every parameter matches exactly, in which case Inspect's
 #    native cache (cache=True in the task) replays for $0).
-#    Requires OPENROUTER_API_KEY: set -a; . /home/ram/obsidian/.env; set +a
-set -a; . /home/ram/obsidian/.env; set +a
+#    Requires OPENROUTER_API_KEY in the environment (export it, or source your own env file).
+export OPENROUTER_API_KEY=...
 
 # SHA family (rung = n_blocks, 448 ops/block):
 inspect eval inspect_task_frontier.py --model openrouter/openai/gpt-5 \
@@ -105,7 +105,7 @@ inspect eval inspect_task_frontier.py --model openrouter/openai/o3 \
     -T family=ecdsa -T model_key=openai/o3 -T rung=8 -T n=8 --log-dir logs_pilot
 
 # Analysis (zero new cost, reads logs_pilot/*.eval + logs_live/*.eval +
-# the parent's results_v2.jsonl): per-condition outcomes, real cost from
+# the parent's results_checkable.jsonl): per-condition outcomes, real cost from
 # token usage x live OpenRouter prices, and the N50/N90 logistic fits,
 # fit SEPARATELY per model x family-group (toy vs real-P-256) with
 # bootstrap CIs and apparatus-failure exclusion (see plan.md's "LIVE GRID

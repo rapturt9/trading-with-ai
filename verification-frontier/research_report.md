@@ -101,7 +101,7 @@ if the model names this exact 3-part location** -- calling TAMPERED with the wro
 (SHA) or wrong section/op_idx/step (ECDSA) scores `TP_wrong_loc`, not a hit. "Tamper-detection
 reliability" in every claim below means the **TP_r4r rate among tampered samples only** (matches how
 `../README.md` cites "100%/88%/52%" for opus-4.6/gpt-5.5/gpt-5 -- each is that model's
-TP_r4r/42 on the SHA-448 dual condition, independently confirmed against `results_v2.jsonl` by
+TP_r4r/42 on the SHA-448 dual condition, independently confirmed against `results_checkable.jsonl` by
 `analyze_pilot.py`'s `load_parent_sha448()`).
 
 ### Op-counting convention (locked, `proposal.md`, verbatim)
@@ -233,7 +233,7 @@ genuine/tampered sample balance was exact throughout (matches the Runs table's `
 | Real P-256 fragments promoted to PRIMARY family | Toy-field ECDSA (8/12/16-bit) demoted to secondary/cheap-dense-sampling; real NIST P-256 curve fragments (contiguous 1/2/4/8-op spans from a genuine signature verify) become the headline ECDSA family for the live grid. | Ram: "I want this to be similar to what is done for TEE" -- real TEE attestation checks a real P-256 signature, not a toy curve. | `plan.md`, "2026-07-12 evening, Pilot RUN" (Family 3 escalation) |
 | TEE-attestation-realism items scoped (not built into the pilot) | Report-shaped SHA payloads, P-256/secp256k1 mechanism tagging, composite mini-attestation rung -- all designed, built and self-tested by `frontier-builder` in parallel, but explicitly not run in this pilot. | Building + self-testing new generator code mid-pilot under paid-run time pressure risks an unverified-generator mistake; deferred to the live grid where it can get the same self-test rigor as everything else. | `proposal.md`, "TEE-attestation realism" section; `plan.md` Pilot RUN entry |
 | Pre-authorization chain | Stage 0 (build, $0, frontier-builder) -> role-boundary flag (spending real money needs an explicit gate, not just a team-lead ask) -> Fable's gate review confirmed -> $45 pilot cap, probe-first (small n, size the rest from real costs) -> pilot ran, $20.37 spent -> live grid ($250-500, hard cap $600) pre-authorized effective on this pilot report + Stage 0c self-tests, both now true. | Keeps real spend behind an explicit, auditable review gate at every step, per this vault's autonomy-with-corrigibility policy. | `plan.md`, "Predictions LOCKED" (role-boundary flag) and "Pilot RUN" (gate cleared) entries |
-| `reasoning_effort="max"` routed through `extra_body` instead of the typed field | The installed `inspect_ai` (0.3.189) rejects `"max"` as an invalid `Literal` for `GenerateConfig.reasoning_effort` (opus-4.6/4.8/fable-5 use `"max"`). Fixed by setting `config.extra_body = {"reasoning": {"effort": effort}}` for any model whose effort string isn't in the valid Literal set. | Found BEFORE any spend: 4 old opus/fable-5 `.eval` logs in `../logs_inspect_v2/` are now unreadable with the current `inspect_ai` for exactly this reason -- writing new pilot logs with the same pattern would have made this pilot's own opus-4.6 data unreadable too. | `plan.md`, "2026-07-12 evening, Pilot harness built" |
+| `reasoning_effort="max"` routed through `extra_body` instead of the typed field | The installed `inspect_ai` (0.3.189) rejects `"max"` as an invalid `Literal` for `GenerateConfig.reasoning_effort` (opus-4.6/4.8/fable-5 use `"max"`). Fixed by setting `config.extra_body = {"reasoning": {"effort": effort}}` for any model whose effort string isn't in the valid Literal set. | Found BEFORE any spend: 4 old opus/fable-5 `.eval` logs in `../logs_inspect_checkable/` are now unreadable with the current `inspect_ai` for exactly this reason -- writing new pilot logs with the same pattern would have made this pilot's own opus-4.6 data unreadable too. | `plan.md`, "2026-07-12 evening, Pilot harness built" |
 
 ---
 
@@ -319,7 +319,7 @@ Trace files: [`gpt5_TP_r4r_ecdsa231.txt`](artifacts/traces/gpt5_TP_r4r_ecdsa231.
 `logs_pilot/2026-07-12T17-24-09+00-00_..._mtNjJTEWYYiNzzD9xgn7aS.eval`,
 `logs_pilot/2026-07-12T17-32-07+00-00_..._Cg4xhDmme3cF6xy7YaN7yW.eval`,
 `logs_pilot/2026-07-12T19-08-09+00-00_..._eAeh2AnN4SFXjEKWiEUUTT.eval`, plus
-`../results_v2.jsonl` for the pooled N=448 point.
+`../results_checkable.jsonl` for the pooled N=448 point.
 
 ### C2. o3 brackets between (231, 448) ops for N50; N90 loosely below 231, confidently below 448
 
@@ -512,7 +512,7 @@ currently-installed `inspect_ai` (0.3.189) -- the `extra_body` fix for `reasonin
 ## Reproducibility
 
 ```
-cd experiments/260706-credible-deals-polish/verification-frontier
+cd verification-frontier
 
 # Self-tests (zero API calls, zero cost, ~1-2 min):
 python3 stage0_selftest.py        # expect "0 failures across all self-tests"

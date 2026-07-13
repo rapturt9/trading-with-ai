@@ -11,7 +11,7 @@ the next block's `init_state`) and a global (cross-block) position axis
 for tamper placement.
 
 Rung sizes: n_blocks in {1, 2, 4, 8, ...}, each block = 64 rounds = 448
-tracked arithmetic operations (matches rq3-replication's "448 such
+tracked arithmetic operations (matches the root package's "448 such
 additions per trace" for n_blocks=1), so n_blocks=8 is a ~3,584-operation
 trace, per structure.md's "SHA at 1/2/4/8 blocks (448 to 3,584 additions)".
 

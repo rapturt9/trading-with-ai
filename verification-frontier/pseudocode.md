@@ -421,11 +421,11 @@ This is the setup for the whole N50 program, not just Stage 0: Stage 0 (built he
 # Review order
 
 1. `../sha256_trace.py` -- read the three extended functions' docstrings (`compress`, `render_dual`) to see exactly what changed and why it's backward-compatible.
-2. `/home/ram/obsidian/experiments/260706-credible-deals-polish/verification-frontier/sha256_multiblock.py` -- the multi-block chaining logic and the `addition`-class tamper.
-3. `/home/ram/obsidian/experiments/260706-credible-deals-polish/verification-frontier/sha256_tamper_classes.py` -- the `bitwise` and `schedule_word` classes.
-4. `/home/ram/obsidian/experiments/260706-credible-deals-polish/verification-frontier/ecdsa_trace.py` -- toy-curve construction, the formula-based DSL (`eval_formula`/`check_formula`), the full traced verification, the independent Jacobian-coordinate reference (now general-`a`, reused by `p256_trace.py`), and `decompose_multiply_linear`.
-5. `/home/ram/obsidian/experiments/260706-credible-deals-polish/verification-frontier/p256_trace.py` -- real P-256 constants, `traced_mulmod`/`check_mulmod`, the generalized `eval_formula_v2`/`check_formula_v2` DSL, and `_ladder_op_sequence`/`_fast_forward`/`run_ladder_fragment` (read the module docstring's "why fragments" section and the bit-vs-op pairing bug fix first).
-6. `/home/ram/obsidian/experiments/260706-credible-deals-polish/verification-frontier/report_payload.py` -- the report-shaped message builder; short, mostly composition.
-7. `/home/ram/obsidian/experiments/260706-credible-deals-polish/verification-frontier/mini_attestation.py` -- the composite chain, the half-weighting, and the downstream-recompute rule applied across the hash-then-sign seam.
-8. `/home/ram/obsidian/experiments/260706-credible-deals-polish/verification-frontier/stage0_selftest.py` -- the sweep that proves every invariant above holds beyond the single examples in each module's own `__main__` block, across all 5 generator modules.
-9. `/home/ram/obsidian/experiments/260706-credible-deals-polish/verification-frontier/token_dry_run.py` -- the context-fit table, all families.
+2. `sha256_multiblock.py` -- the multi-block chaining logic and the `addition`-class tamper.
+3. `sha256_tamper_classes.py` -- the `bitwise` and `schedule_word` classes.
+4. `ecdsa_trace.py` -- toy-curve construction, the formula-based DSL (`eval_formula`/`check_formula`), the full traced verification, the independent Jacobian-coordinate reference (now general-`a`, reused by `p256_trace.py`), and `decompose_multiply_linear`.
+5. `p256_trace.py` -- real P-256 constants, `traced_mulmod`/`check_mulmod`, the generalized `eval_formula_v2`/`check_formula_v2` DSL, and `_ladder_op_sequence`/`_fast_forward`/`run_ladder_fragment` (read the module docstring's "why fragments" section and the bit-vs-op pairing bug fix first).
+6. `report_payload.py` -- the report-shaped message builder; short, mostly composition.
+7. `mini_attestation.py` -- the composite chain, the half-weighting, and the downstream-recompute rule applied across the hash-then-sign seam.
+8. `stage0_selftest.py` -- the sweep that proves every invariant above holds beyond the single examples in each module's own `__main__` block, across all 5 generator modules.
+9. `token_dry_run.py` -- the context-fit table, all families.

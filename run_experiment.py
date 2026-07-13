@@ -1,6 +1,6 @@
 """RQ3 replication harness.
 
-Calls models via OpenRouter (OPENROUTER_API_KEY from /home/ram/obsidian/.env).
+Calls models via OpenRouter (reads OPENROUTER_API_KEY from the environment).
 Every response is cached to disk, keyed on (model, prompt_hash, sample_idx),
 so a repeat invocation makes zero new API calls if nothing changed
 (`--assert-cached` fails loudly if it would have to call the network).
@@ -55,8 +55,8 @@ PHASE2B_PROMPT_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "prompt_t
 PHASE2B_MAX_TOKENS = 32000
 # Phase 3 (2026-07-11): maximally-observable redesign (see redesign-proposal.md).
 # Dual binary+decimal rendering (render_dual), short 5-rule prompt, bounded JSON
-# output. Run via inspect_task_v2.py (Inspect, native caching).
-PROMPT_TEMPLATE_V2_PATH = os.path.join(os.path.dirname(__file__), "prompt_template_v2.md")
+# output. Run via inspect_task_checkable.py (Inspect, native caching).
+PROMPT_TEMPLATE_CHECKABLE_PATH = os.path.join(os.path.dirname(__file__), "prompt_template_checkable.md")
 
 # Epoch Capability Index, pulled from epoch.ai/data/eci_scores.csv (see plan.md
 # 2026-07-08 entry). Single source of truth for the capability axis; provenance
@@ -220,7 +220,7 @@ def build_prompt_v2(trace_text):
     """Phase 3 prompt: the short 5-rule + JSON-schema template, wrapped around a
     render_dual() trace. Kept separate from build_prompt() so Phase 1/1b/2 cache
     keys are untouched."""
-    return load_prompt_template(PROMPT_TEMPLATE_V2_PATH).replace("{trace}", trace_text)
+    return load_prompt_template(PROMPT_TEMPLATE_CHECKABLE_PATH).replace("{trace}", trace_text)
 
 
 def cache_key(model, prompt, sample_idx, tag=""):
@@ -311,12 +311,6 @@ def get_api_key():
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if api_key:
         return api_key
-    env_path = "/home/ram/obsidian/.env"
-    if os.path.exists(env_path):
-        with open(env_path) as f:
-            for line in f:
-                if line.startswith("OPENROUTER_API_KEY="):
-                    return line.strip().split("=", 1)[1]
     print("OPENROUTER_API_KEY not found, aborting.", file=sys.stderr)
     sys.exit(1)
 

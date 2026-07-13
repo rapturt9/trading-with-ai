@@ -9,17 +9,17 @@ Reproducibility (per the reproducibility-and-evidence skill + Ram's directive):
   - Native Inspect caching (cache=True) on the generate call -> a rerun is a
     FREE replay (zero new API calls) as long as model/prompt/config are
     unchanged. This is Phase 3's equivalent of the older --assert-cached.
-  - .eval logs in logs_inspect_v2/ capture the full prompt, full visible output,
+  - .eval logs in logs_inspect_checkable/ capture the full prompt, full visible output,
     and ContentReasoning blocks natively.
   - The scorer stores, per sample, the full parsed JSON + every metric input +
     provenance (model_key, ECI, effort, max_tokens, renderer, seed, git commit,
-    exact model id as returned by the API) so results_v2.jsonl and all headline
+    exact model id as returned by the API) so results_checkable.jsonl and all headline
     numbers are recomputable offline from the logs with zero new calls.
 
 Reproduce (one model per invocation; see README.md Reproduce block for the full
 set with every -T parameter):
-    inspect eval inspect_task_v2.py --model openrouter/openai/gpt-4o \
-        -T model_key=openai/gpt-4o -T renderer=dual --log-dir logs_inspect_v2
+    inspect eval inspect_task_checkable.py --model openrouter/openai/gpt-4o \
+        -T model_key=openai/gpt-4o -T renderer=dual --log-dir logs_inspect_checkable
 """
 
 import json
@@ -42,8 +42,8 @@ from run_experiment import (
 )
 from sha256_trace import render_dual, render_trace, position_buckets, \
     generate_genuine, generate_tampered
-from score_v2 import (
-    parse_response_v2, score_v2, is_strict_mechanism,
+from score_checkable import (
+    parse_response_checkable, score_checkable, is_strict_mechanism,
     true_and_printed_sums, arithmetic_error_stats, verdict_evidence_consistent,
 )
 
@@ -102,8 +102,8 @@ def r4r_v2_scorer(model_key: str, renderer: str, reasoning_effort: str, max_toke
     async def do_score(state: TaskState, target: Target) -> Score:
         gt = json.loads(target.text)
         text = state.output.completion
-        parsed = parse_response_v2(text)
-        outcome = score_v2(gt["is_tampered"], gt["tamper_round"], parsed)
+        parsed = parse_response_checkable(text)
+        outcome = score_checkable(gt["is_tampered"], gt["tamper_round"], parsed)
 
         # rebuild round-indexed true/printed sums from sample metadata
         true_list = state.metadata["true_sums"]

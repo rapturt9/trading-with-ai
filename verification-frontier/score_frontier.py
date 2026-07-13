@@ -1,6 +1,6 @@
 """Scoring for the N50 ops-horizon Inspect harness (inspect_task_frontier.py).
 
-Generalizes ../score_v2.py's right-for-right-reason (r4r) rule
+Generalizes ../score_checkable.py's right-for-right-reason (r4r) rule
 to BOTH families here. rq3's rule requires naming the exact tampered ROUND;
 this experiment's generators can tamper any of several fields/steps per round
 (SHA: addition/bitwise/schedule_word classes) or any line in an ECDSA point-op
@@ -80,7 +80,7 @@ def _last_label_value(text, label, typ):
 
 
 def parse_final_block(text, family):
-    """Last VERDICT: + last of each location label, matching score_v2's
+    """Last VERDICT: + last of each location label, matching score_checkable's
     'take the LAST occurrence' convention (a model that restates its answer
     should be scored on its final statement)."""
     cfg = FAMILY_CONFIG[family]
@@ -94,7 +94,7 @@ def parse_final_block(text, family):
 
 def extract_json(text, family):
     """Return the model's JSON object (must contain "call") or None. Same
-    balanced-brace scan as score_v2.extract_json, generalized to any family
+    balanced-brace scan as score_checkable.extract_json, generalized to any family
     (the scan itself doesn't depend on which keys the schema uses)."""
     if not text:
         return None
@@ -136,7 +136,7 @@ def _json_loc(jobj, family):
 
 
 def parse_p_tampered(text, json_obj):
-    """Identical convention to score_v2.parse_p_tampered: final block first,
+    """Identical convention to score_checkable.parse_p_tampered: final block first,
     then JSON, then 0.5 imputation; out-of-range clamped and flagged."""
     malformed = False
     val = None
@@ -165,7 +165,7 @@ def parse_p_tampered(text, json_obj):
 
 def parse_response_frontier(text, family):
     """Resolve verdict/location with the pre-registered fallback order (final
-    block first, JSON second -- matching rq3-replication's v2 convention),
+    block first, JSON second -- matching the root package's v2 convention),
     plus p_tampered and the raw JSON object. Never crashes on model output."""
     if family not in FAMILY_CONFIG:
         raise ValueError(f"unknown family {family!r}")  # our own bug, crash loud
@@ -198,7 +198,7 @@ def parse_response_frontier(text, family):
 
 
 def score_frontier(gt_is_tampered, gt_loc, parsed):
-    """6-way outcome, generalized from score.py/score_v2.py's rule to a
+    """6-way outcome, generalized from score.py/score_checkable.py's rule to a
     3-part location tuple instead of a bare round number:
       TN            genuine, called GENUINE
       FP            genuine, called TAMPERED

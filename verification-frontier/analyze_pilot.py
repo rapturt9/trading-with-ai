@@ -1,14 +1,14 @@
 """Pilot analysis: per-condition parse rates/outcomes, real costs from
 logged token usage x live OpenRouter prices, and a joint logistic-in-log(N)
 fit per model pooling this pilot's rungs with the parent experiment's
-SHA-448 result (../results_v2.jsonl, dual rendering).
+SHA-448 result (../results_checkable.jsonl, dual rendering).
 
 Reliability, per proposal.md's Definition section, is TAMPERED-only
 detection reliability (TP_r4r rate among tampered samples) -- this is what
 "tamper-detection reliability crosses 50%" in the N50 definition means, and
-matches how rq3-replication's own README cites "100%/88%/52% for
+matches how the root package's own README cites "100%/88%/52% for
 opus-4.6/gpt-5.5/gpt-5" (each is exactly that model's TP_r4r/42 on the dual
-SHA-448 condition, confirmed against results_v2.jsonl below).
+SHA-448 condition, confirmed against results_checkable.jsonl below).
 
 HONESTY NOTE (Ram, carried into every number this script prints): tampers
 here are single seeded bit flips, never adversarially iterated against the
@@ -19,7 +19,7 @@ verifier would achieve against an adversarial tamperer or a CoT-restricted
 setting, not a general capability measurement.
 
 Run: python3 analyze_pilot.py  (reads logs_pilot/*.eval + the parent's
-results_v2.jsonl; zero new API calls, pure local computation.)
+results_checkable.jsonl; zero new API calls, pure local computation.)
 """
 
 import json
@@ -40,7 +40,7 @@ HERE = os.path.dirname(__file__)
 # 4 pre-verdict-leak-fix ECDSA logs, moved out 2026-07-12) is never picked
 # up here even though it lives inside LOG_DIRS[0].
 LOG_DIRS = [os.path.join(HERE, "logs_pilot"), os.path.join(HERE, "logs_live")]
-PARENT_RESULTS = os.path.join(HERE, "..", "results_v2.jsonl")
+PARENT_RESULTS = os.path.join(HERE, "..", "results_checkable.jsonl")
 
 SHA_OPS_PER_BLOCK = 448
 

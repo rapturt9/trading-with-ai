@@ -1,4 +1,4 @@
-"""Phase 3 plots, regenerated from results_v2.jsonl (Arm A, dual renderer) and
+"""Phase 3 plots, regenerated from results_checkable.jsonl (Arm A, dual renderer) and
 results_maxeffort.jsonl (Phase 1b baseline). No API calls. Colorblind-safe,
 CI error bars, one axis, direct-labeled points (dataviz skill).
 
@@ -7,7 +7,7 @@ Outputs (plots/):
   specificity_vs_eci_v2.png      - genuine-specificity vs ECI, 95% Wilson CI
   phase1b_vs_phase3_r4r.png      - before/after grouped bars, per model
 
-Run: python3 make_plots_v2.py
+Run: python3 make_plots_checkable.py
 """
 
 import json
@@ -45,7 +45,7 @@ def wilson(k, n, z=1.96):
 def load_phase3():
     """Arm A dual per-model: (tp_r4r, n_tampered, tn, n_genuine)."""
     recs = defaultdict(list)
-    for line in open("results_v2.jsonl"):
+    for line in open("results_checkable.jsonl"):
         r = json.loads(line)
         if r["renderer"] == "dual":
             recs[r["model_key"]].append(r)

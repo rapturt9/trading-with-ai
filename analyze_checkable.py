@@ -1,5 +1,5 @@
-"""Phase 3 analysis / export: read the Inspect .eval logs in logs_inspect_v2/,
-stream every sample's stored score metadata to results_v2.jsonl (one line per
+"""Phase 3 analysis / export: read the Inspect .eval logs in logs_inspect_checkable/,
+stream every sample's stored score metadata to results_checkable.jsonl (one line per
 (model, renderer, trace), full provenance), and compute the metric suite +
 pilot gates per (model, renderer).
 
@@ -11,8 +11,8 @@ this script re-derives identical numbers).
 Reuses the summarize_inspect_logs.py raw-zip fallback for the inspect_ai 0.3.189
 reasoning_effort="max" log-schema bug (claude models).
 
-Run: python3 analyze_v2.py            # export + full metric table
-     python3 analyze_v2.py --gates    # also print the pilot gate verdicts
+Run: python3 analyze_checkable.py            # export + full metric table
+     python3 analyze_checkable.py --gates    # also print the pilot gate verdicts
 """
 
 import glob
@@ -22,11 +22,11 @@ import sys
 import zipfile
 from collections import defaultdict
 
-from score_v2 import auroc, bootstrap_auroc_ci, tpr_at_fpr, brier
+from score_checkable import auroc, bootstrap_auroc_ci, tpr_at_fpr, brier
 from run_experiment import call_cost, PRICES_DATE
 
-LOG_DIR = "logs_inspect_v2"
-RESULTS = "results_v2.jsonl"
+LOG_DIR = "logs_inspect_checkable"
+RESULTS = "results_checkable.jsonl"
 SCORER = "r4r_v2_scorer"
 
 

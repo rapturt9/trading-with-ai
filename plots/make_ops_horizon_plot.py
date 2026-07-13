@@ -3,7 +3,7 @@
 N50 = trace length (checkable operations) at which a model's tamper-detection
 reliability is 50%. These points are BACK-CALCULATED from each model's measured
 detection reliability at the single measured length (448 operations, checkable
-rendering, results_v2.jsonl) under reliability(N) = r448^(N/448). The
+rendering, results_checkable.jsonl) under reliability(N) = r448^(N/448). The
 verification-frontier experiment replaces them with directly measured points.
 
 Run: python3 make_ops_horizon_plot.py   (writes ops_horizon_vs_time.png; no API calls)

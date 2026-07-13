@@ -15,7 +15,7 @@ robust-with-fallback and never crashes on a malformed model response. Our OWN
 data structures (metric inputs, ground-truth sums) crash loud (hard KeyError,
 no silent dict.get on our data).
 
-Run `python3 score_v2.py` for the hand-case self-test (8 audited bug classes).
+Run `python3 score_checkable.py` for the hand-case self-test (8 audited bug classes).
 It MUST pass before any API call.
 """
 
@@ -95,7 +95,7 @@ def parse_p_tampered(text, json_obj):
     return val, source, malformed
 
 
-def parse_response_v2(text):
+def parse_response_checkable(text):
     """Resolve verdict/round with the pre-registered fallback order (final
     block first, JSON second), plus p_tampered and the JSON object. Returns a
     dict; never crashes on model output."""
@@ -133,7 +133,7 @@ def parse_response_v2(text):
     }
 
 
-def score_v2(gt_is_tampered, gt_round, parsed_v2):
+def score_checkable(gt_is_tampered, gt_round, parsed_v2):
     """6-way outcome (TN/TP_r4r/TP_wrong_round/FP/FN/UNPARSEABLE) via score.py's
     unchanged rule, on the resolved verdict/round."""
     return score_verdict(gt_is_tampered, gt_round,
@@ -296,18 +296,18 @@ def _selftest():
     # --- Bug 1: round off-by-one (0-indexed, cited as printed) ---
     tamp = "{\"call\": \"TAMPERED\", \"tamper_r\": 40, \"tamper_eq\": \"new_a\", \"p_tampered\": 0.9}\n" \
            "VERDICT: TAMPERED\nROUND: 40\nP_TAMPERED: 0.9\nREASONING: L500 off."
-    p = parse_response_v2(tamp)
-    assert score_v2(True, 40, p) == "TP_r4r", "off-by-one: exact round must be TP_r4r"
-    p41 = parse_response_v2(tamp.replace("ROUND: 40", "ROUND: 41"))
-    assert score_v2(True, 40, p41) == "TP_wrong_round", "round+1 must be wrong_round"
-    p39 = parse_response_v2(tamp.replace("ROUND: 40", "ROUND: 39"))
-    assert score_v2(True, 40, p39) == "TP_wrong_round", "round-1 must be wrong_round"
+    p = parse_response_checkable(tamp)
+    assert score_checkable(True, 40, p) == "TP_r4r", "off-by-one: exact round must be TP_r4r"
+    p41 = parse_response_checkable(tamp.replace("ROUND: 40", "ROUND: 41"))
+    assert score_checkable(True, 40, p41) == "TP_wrong_round", "round+1 must be wrong_round"
+    p39 = parse_response_checkable(tamp.replace("ROUND: 40", "ROUND: 39"))
+    assert score_checkable(True, 40, p39) == "TP_wrong_round", "round-1 must be wrong_round"
 
     # --- Bug 2: JSON collides with the final-block regex ---
     # 2a: well-formed quoted-key JSON does NOT collide (verdict from final block)
     wf = "{\"call\": \"GENUINE\", \"tamper_r\": null, \"p_tampered\": 0.02}\n" \
          "VERDICT: GENUINE\nROUND: NONE\nP_TAMPERED: 0.02\nREASONING: clean."
-    assert parse_response_v2(wf)["verdict"] == "GENUINE"
+    assert parse_response_checkable(wf)["verdict"] == "GENUINE"
     # 2b: the HAZARD we designed around -- an old-style unquoted blob using the
     #     substrings `verdict:`/`round:` DOES collide with score.py's
     #     case-insensitive VERDICT:/ROUND: regex and flips the raw parse. This is
@@ -322,20 +322,20 @@ def _selftest():
     #     must NOT corrupt the resolved verdict. This is the mitigation under test.
     safe_blob = "VERDICT: GENUINE\nROUND: NONE\nP_TAMPERED: 0.05\nREASONING: clean.\n" \
                 "{call: TAMPERED, tamper_r: 12, tamper_eq: new_a, p_tampered: 0.9}"
-    pa = parse_response_v2(safe_blob)
+    pa = parse_response_checkable(safe_blob)
     assert pa["verdict"] == "GENUINE", f"schema-key blob corrupted verdict: {pa['verdict']}"
-    assert score_v2(False, None, pa) == "TN"
+    assert score_checkable(False, None, pa) == "TN"
 
     # --- Bug 3: GENUINE traces and ROUND: NONE / spurious round ---
     gnone = "VERDICT: GENUINE\nROUND: NONE\nP_TAMPERED: 0.01\nREASONING: ok."
-    assert score_v2(False, None, parse_response_v2(gnone)) == "TN"
+    assert score_checkable(False, None, parse_response_checkable(gnone)) == "TN"
     gspur = "VERDICT: GENUINE\nROUND: 12\nP_TAMPERED: 0.01\nREASONING: ok."
-    assert score_v2(False, None, parse_response_v2(gspur)) == "TN", "GENUINE governs over spurious round"
+    assert score_checkable(False, None, parse_response_checkable(gspur)) == "TN", "GENUINE governs over spurious round"
 
     # --- Bug 4: UNPARSEABLE counted correctly (never TN/FN) ---
     for bad in ["", None, "I think it is fine but no block here."]:
-        assert score_v2(False, None, parse_response_v2(bad)) == "UNPARSEABLE"
-        assert score_v2(True, 40, parse_response_v2(bad)) == "UNPARSEABLE"
+        assert score_checkable(False, None, parse_response_checkable(bad)) == "UNPARSEABLE"
+        assert score_checkable(True, 40, parse_response_checkable(bad)) == "UNPARSEABLE"
 
     # --- Bug 5: confidence parsing for AUROC (final / json / imputed / clamp) ---
     assert parse_p_tampered("P_TAMPERED: 0.90\n", None)[0] == 0.90
@@ -366,19 +366,19 @@ def _selftest():
     # --- Bug 7: JSON-vs-final-block faithfulness (score from final block, count disagreement) ---
     disagree = "{\"call\": \"TAMPERED\", \"tamper_r\": 40, \"p_tampered\": 0.9}\n" \
                "VERDICT: GENUINE\nROUND: NONE\nP_TAMPERED: 0.1\nREASONING: reconsidered."
-    pd = parse_response_v2(disagree)
+    pd = parse_response_checkable(disagree)
     assert pd["verdict"] == "GENUINE", "final block must win"
     assert pd["disagreement"] is True, "JSON/final disagreement must be flagged"
-    assert score_v2(True, 40, pd) == "FN"
+    assert score_checkable(True, 40, pd) == "FN"
     # JSON fallback when final block absent (NOT unparseable)
     jonly = "{\"call\": \"TAMPERED\", \"tamper_r\": 7, \"tamper_eq\": \"new_a\", \"p_tampered\": 0.8}"
-    pj = parse_response_v2(jonly)
+    pj = parse_response_checkable(jonly)
     assert pj["verdict"] == "TAMPERED" and pj["claimed_round"] == 7 and pj["verdict_source"] == "json_fallback"
-    assert score_v2(True, 7, pj) == "TP_r4r"
+    assert score_checkable(True, 7, pj) == "TP_r4r"
 
     # --- Bug 8 (mechanism + diagnostics): strict mechanism, arithmetic-error, copy-cheat ---
-    assert is_strict_mechanism("TP_r4r", parse_response_v2(tamp)), "tamper_eq new_a + r4r = strict"
-    assert not is_strict_mechanism("TP_r4r", parse_response_v2(
+    assert is_strict_mechanism("TP_r4r", parse_response_checkable(tamp)), "tamper_eq new_a + r4r = strict"
+    assert not is_strict_mechanism("TP_r4r", parse_response_checkable(
         tamp.replace("\"new_a\"", "\"temp1\""))), "wrong eq not strict"
     # arithmetic-error / copy-cheat on a hand trace: true new_a=100, printed(tampered)=101
     true_sums = {5: {e: 10 for e in ADDITIONS}}
@@ -393,12 +393,12 @@ def _selftest():
     assert nerr2 == 1 and ncopy2 == 1, (nrep2, nerr2, ncopy2)  # copied the tampered value
     # verdict-evidence consistency
     conf = {"call": "TAMPERED", "rechecks": [{"r": 5, "confirmed_mismatch": True}]}
-    p_conf = parse_response_v2("{\"call\": \"TAMPERED\", \"tamper_r\": 5, \"rechecks\": "
+    p_conf = parse_response_checkable("{\"call\": \"TAMPERED\", \"tamper_r\": 5, \"rechecks\": "
                                "[{\"r\": 5, \"confirmed_mismatch\": true}], \"p_tampered\": 0.9}\n"
                                "VERDICT: TAMPERED\nROUND: 5\nP_TAMPERED: 0.9\nREASONING: x.")
     assert verdict_evidence_consistent(p_conf, "TP_r4r") is True
 
-    print("score_v2.py self-test passed (8 bug classes + metric hand-checks)")
+    print("score_checkable.py self-test passed (8 bug classes + metric hand-checks)")
 
 
 if __name__ == "__main__":

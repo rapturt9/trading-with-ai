@@ -3,10 +3,8 @@
 # background processes (one per model, so a slow claude-opus-4.6 call
 # doesn't block the fast models), matching run_experiment.py's
 # interleaved-thread-pool intent via OS-level process parallelism instead.
-set -a
-source /home/ram/obsidian/.env
-set +a
-cd /home/ram/obsidian/experiments/260706-credible-deals-polish/rq3-replication
+# Requires OPENROUTER_API_KEY in the environment.
+cd "$(dirname "$0")"
 
 MODELS=(
   "openai/gpt-4o"

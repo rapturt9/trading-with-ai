@@ -1,6 +1,6 @@
 """Stage 0 (zero API calls): token counts per rung, both task families,
 both renderings, using tiktoken (same cl100k_base estimate the parent
-rq3-replication project uses for its dry runs -- see sha256_trace.py
+the root package uses for its dry runs -- see sha256_trace.py
 --dry-run). Reports which of the 5 live-run models' context windows each
 rung fits, using the published/estimated context-window figures in
 proposal.md's "Context windows" table.
