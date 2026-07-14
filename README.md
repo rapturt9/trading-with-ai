@@ -6,6 +6,17 @@ The reproducibility package for the LessWrong post **"Making Credible Deals With
 
 Everything here reproduces from committed code, per-call caches, and Inspect `.eval` logs. A rerun makes zero new API calls and reproduces every table.
 
+## Contents
+
+- [The two headline results](#the-two-headline-results)
+  - [1. Detection is weak on a raw trace, strong on a checkable one](#1-detection-is-weak-on-a-raw-trace-strong-on-a-trace-rendered-to-be-checked)
+  - [2. The verification horizon over time, measured on a proxy](#2-the-verification-horizon-over-time-measured-on-a-proxy)
+- [The ECDSA and P-256 experiments (setup, sample counts, results)](#the-ecdsa-and-p-256-experiments-setup-sample-counts-results)
+- [Design](#design)
+- [Example trace](#example-trace-real-output-truncated)
+- [Reproduce](#reproduce)
+- [What is in this repo](#what-is-in-this-repo)
+
 ## The two headline results
 
 ### 1. Detection is weak on a raw trace, strong on a trace rendered to be checked
@@ -59,6 +70,38 @@ Measured points (small cells, 2 to 8 traces each, so directional):
 gpt-4o never clears the bar on either family and is left off the trend.
 
 **On the proxy trend, the N90 horizon roughly doubles every 154 days**, and reaches full ECDSA-signature length (about 410,000 to 800,000 operations) around **2029-11** and a full TEE attestation check (roughly 1.2 to 3.2 million operations) around **2030-08**. These are extrapolations from three points over small samples, two of them brackets rather than sharp crossings, and read off the easier proxy. Treat the dates as order-of-magnitude, and as an optimistic upper bound: the real-P-256 frontier today is much shorter.
+
+## The ECDSA and P-256 experiments (setup, sample counts, results)
+
+The horizon above extends the SHA-256 experiment to two elliptic-curve families in [`verification-frontier/`](verification-frontier/). Both generate a genuine-or-tampered trace with exactly one planted bit flip that leaves exactly one locally-inconsistent line, everything downstream recomputed consistently. Scoring is the same strict rule: a `TAMPERED` verdict counts only if the model names the exact `(section, op_idx, step)` location.
+
+**Small-curve ECDSA** ([`verification-frontier/ecdsa_trace.py`](verification-frontier/ecdsa_trace.py)). A constructed 8/12/16-bit prime-field curve, tracing the **full** ECDSA verification algorithm end to end: the `u1`/`u2` computation, the modular inverse, both double-and-add scalar-multiplication ladders, point addition, and the final comparison, every step at word scale. It is the real algorithm on a small field, cross-checked against a from-scratch Jacobian-coordinate reference verify. This is the "small-curve" proxy the horizon trend is fit on.
+
+**Real P-256 fragments** ([`verification-frontier/p256_trace.py`](verification-frontier/p256_trace.py), the primary family). Real NIST P-256 (secp256r1) curve constants, real 256-bit coordinates, the general Weierstrass `a = p-3` (not the `a=0` shortcut the small-curve family uses), and every 256-bit multiplication decomposed **linearly** into word-scale lines, so a real multiply renders as a handful of lines, not one opaque bignum and not an n-squared blowup. Each trace is a contiguous 1/2/4/8-operation span drawn from a genuine complete verification. This is the real primitive a hardware attestation actually checks.
+
+**Sample counts are small, read this before the tables.** Each cell is n=4 or n=8 traces, split roughly half tampered and half genuine, and many of the longer horizon rungs are a single trace. These are directional pilot cells, not powered measurements.
+
+Small-curve ECDSA (8-bit field, p=223, trace length ~230 to 320 ops), tamper caught (exact location) / genuine passed:
+
+| Model | n (tampered / genuine) | Tamper caught | Genuine passed |
+| --- | --- | --- | --- |
+| o3 | 4 / 4 | 4/4 | 4/4 |
+| gpt-5 | 2 / 2 | 2/2 | 2/2 |
+| claude-opus-4.6 | 2 / 2 | 2/2 | 2/2 |
+| gpt-4o | 4 / 4 | 0/4 | 1/4 |
+
+Real P-256 fragments, tamper caught (exact location) / genuine passed:
+
+| Model | Tested lengths | n (tampered / genuine) | Tamper caught | Genuine passed |
+| --- | --- | --- | --- | --- |
+| gpt-4o | ~202 to 270 ops | 4 / 4 | 0/4 | 2/4 |
+| o3 | ~202 to 270 ops | 4 / 4 | 0/4 | 4/4 |
+| gpt-5 | ~472 to 1,012 ops | 6 / 6 | 0/6 | 6/6 |
+| claude-opus-4.6 | ~2,024 to 2,092 ops | 2 / 2 | 0/2 | 2/2 |
+
+(claude-opus-4.6 also ran 4 traces at ~944 to 1,080 ops that came back unparseable, an apparatus failure excluded from the counts, not scored as a miss.)
+
+**The result in one line.** On the small-curve proxy at a few hundred operations, the three capable models catch every tamper. On **real P-256, every model is already at 0% tamper detection** at every tested length, which is exactly why the plotted horizon is an optimistic upper bound read off the easier proxy, not the real-P-256 frontier. Full per-condition outcomes, costs, and the logistic fits are in [`verification-frontier/README.md`](verification-frontier/README.md) and reproduce from the committed logs with `python3 verification-frontier/analyze_pilot.py`.
 
 ## Design
 
