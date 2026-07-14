@@ -1,6 +1,6 @@
 # Can AI models verify cryptographic traces?
 
-The reproducibility package for the LessWrong post **"Making credible deals with AIs"** by Ram Potham. It measures whether a frontier language model can catch a single flipped bit hidden inside a cryptographic computation trace and name the exact step where it was flipped. That is the load-bearing empirical question behind the post's claim that an AI could verify a hardware attestation by re-deriving it in its own reasoning, with no tool calls.
+The reproducibility package for the LessWrong post **"Making Credible Deals With AI"** by Ram Potham. It measures whether a frontier language model can catch a single flipped bit hidden inside a cryptographic computation trace and name the exact step where it was flipped. That is the load-bearing empirical question behind the post's claim that an AI could verify a hardware attestation by re-deriving it in its own reasoning, with no tool calls.
 
 **Confidence: High on the detection result, Medium-to-Low on the frontier dates.** The detection numbers are real API calls, fully reproducible with a proven zero-new-call replay. The frontier horizon is fit on small samples and an easier proxy, so its dated crossings are an optimistic upper bound, not a calendar commitment (see below).
 
@@ -125,7 +125,7 @@ python3 src/make_plots_checkable.py           # writes plots/detection_vs_capabi
 
 **Zero-new-call replay** is the reproducibility gold standard here: re-run any `inspect eval` above, Inspect serves every sample from cache, then `src/analyze_checkable.py --gates` re-derives every headline number identically. Proof is in `review/artifacts/replay_zero_calls.txt`.
 
-The verification-frontier horizon experiment (Figure 3 of the post) has its own Reproduce block in [`verification-frontier/README.md`](verification-frontier/README.md).
+The verification-frontier horizon experiment (Figure 2 of the post) has its own Reproduce block in [`verification-frontier/README.md`](verification-frontier/README.md).
 
 ## What is in this repo
 
@@ -141,4 +141,4 @@ The verification-frontier horizon experiment (Figure 3 of the post) has its own 
 - `plots/`: figures.
 - `review/`: the human review layer (`review/README.md` indexes it): `full_prompt_example.txt` (one complete real prompt), `traces/` (curated per-outcome cases), `artifacts/` (one proving artifact per pipeline step).
 - `pseudocode.md`: the mechanistic map, with setup and control-flow diagrams.
-- `verification-frontier/`: the horizon experiment (Figure 3).
+- `verification-frontier/`: the horizon experiment (Figure 2).

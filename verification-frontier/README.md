@@ -1,6 +1,6 @@
 # The verification horizon: how long a cryptographic trace can a model verify?
 
-The horizon experiment behind **Figure 3** of the LessWrong post "Making credible deals with AIs" by Ram Potham. It extends the root SHA-256 tamper experiment (repository root) to longer and harder traces and measures how the reliable verification length grows across model release dates.
+The horizon experiment behind **Figure 2** of the LessWrong post "Making Credible Deals With AI" by Ram Potham. It extends the root SHA-256 tamper experiment (repository root) to longer and harder traces and measures how the reliable verification length grows across model release dates.
 
 **Confidence: Medium on the proxy fit, Low on the dated crossings.** The horizon is fit on small samples and an easier proxy axis, so the dates are an optimistic upper bound, not a calendar commitment (see the honesty notes below).
 
@@ -94,7 +94,7 @@ The full set of `-T rung` / `-T n` combinations run across all four models produ
 
 ## Evidence
 
-- `verification_horizon_measured.png`: the horizon plot (Figure 3), N50 and N90 points and brackets vs release date, with the ECDSA and TEE bands and crossing dates.
+- `verification_horizon_measured.png`: the horizon plot (Figure 2), N50 and N90 points and brackets vs release date, with the ECDSA and TEE bands and crossing dates.
 - `artifacts/selftest_summary.txt`: the full self-test log, every family x rung x bucket x class, 0 failures.
 - `artifacts/example_*.txt`: a complete rendered trace pair per family (genuine and tampered), the tampered one flagged at exactly one line and hand-checkable (e.g. the small-curve ECDSA pair: `(138 - 183) mod 223 = 178`, printed value `162`).
 - `logs_pilot/*.eval`, `logs_live/*.eval`: the Inspect logs, readable via `inspect view` or `read_eval_log`. `analyze_pilot.py` computes every reported number from these.
